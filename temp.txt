@@ -1,0 +1,36 @@
+I: Write only the most difficult word in the next text:
+
+Text: Behold, there came up out of the river seven cattle, sleek and fat, and they fed in the marsh grass.
+
+GPT: Behold
+
+I: Write only the most difficult word in the next text:
+
+Text: Seven days you shall eat unleavened bread, as I commanded you, at the time appointed in the month Abib; for in the month Abib you came out from Egypt.
+
+GPT: unleavened
+
+I: Write only the most difficult word in the next text:
+
+Text: They shall go forth, and look on the dead bodies of the men who have transgressed against me: for their worm shall not die, neither shall their fire be quenched; and they will be loathsome to all mankind.
+
+GPT: transgressed
+
+I: Write only the most difficult word in the next text:
+
+Text: David said to Saul, "Your servant was keeping his father's sheep; and when a lion or a bear came, and took a lamb out of the flock,
+
+1 = 0,0 - 0,24 very easy
+2 = 0,25 - 0,49 easy
+3 = 0,50 - 0,74 neutral
+4 = 0,75 - 0,99 hard
+5 = 1 very hard
+
+1 = 0,0 - 0,19 very easy
+2 = 0,2 - 0,25 easy
+3 = 0,26 - 0,50 neutral
+4 = 0,51 - 0,75 hard
+5 = 0,76 - 1 very hard
+
+
+
