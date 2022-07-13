@@ -1,32 +1,37 @@
 import openai
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
 
 escala = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
-titulos = "N\tToken\t\tRespuesta GPT\t\tRango\t\tComplejidad - compLex\t\tCoincidencia\n"
+titulos = "N\tToken\t\tRespuesta GPT\tRango\t\tComplejidad - compLex"
 
 
-def imprimirFila(cuenta, indice, dframe, respuestaGPT3, rango, complejidad, comparacion):
+def imprimirFila(cuenta, indice, dframe, respuestaGPT3, rango, complejidad):
     token = dframe["token"][indice]
     if len(token) >= 8:
         token = token + "\t"
     else:
         token = token + "\t\t"
 
+    respuestaGPT3 = str(round(respuestaGPT3, 3))
     if len(respuestaGPT3) >= 8:
-        respuestaGPT3 = respuestaGPT3 + "\t\t"
+        respuestaGPT3 = respuestaGPT3 + "\t"
     else:
-        respuestaGPT3 = respuestaGPT3 + "\t\t\t"
+        respuestaGPT3 = respuestaGPT3 + "\t\t"
 
     if len(rango) >= 8:
         rango = rango + "\t"
     else:
         rango = rango + "\t\t"
 
+    complejidad = str(round(complejidad, 3))
     if len(complejidad) >= 8:
         complejidad = complejidad + "\t\t\t"
     else:
         complejidad = complejidad + "\t\t\t\t"
 
-    print(str(cuenta) + "\t" + token + respuestaGPT3 + rango + complejidad + comparacion)
+    print(str(cuenta) + "\t" + token + respuestaGPT3 + rango + complejidad)
 
 
 def asigValor(valor):
@@ -45,6 +50,22 @@ def asigValor(valor):
 
     return escala
 
+def asigMedio(valor_escala):
+    valor_medio = 0
+
+    if valor_escala == escala[0]:
+        valor_medio = 0
+    elif valor_escala == escala[1]:
+        valor_medio = (0.01 + 0.25) / 2
+    elif valor_escala == escala[2]:
+        valor_medio = (0.26 + 0.50) / 2
+    elif valor_escala == escala[3]:
+        valor_medio = (0.51 + 0.75) / 2
+    elif valor_escala == escala[4]:
+        valor_medio = (0.76 + 1) / 2
+
+    return valor_medio
+
 def asigRango(escala):
 
     rango = ""
@@ -52,7 +73,7 @@ def asigRango(escala):
     if escala == "very easy":
         rango = "0"
     if escala == "easy":
-        rango = "0.1 - 0.25"
+        rango = "0.01 - 0.25"
     if escala == "neutral":
         rango = "0.26 - 0.50"
     if escala == "difficult":
@@ -91,44 +112,37 @@ def evaluar(orden):
 
 
 def palabras_complejas(dframe, orden):
-    resultado = dframe.loc[:, ["source", "sentence", "token"]]
-    resultado["Escala GPT3"] = None
+    resultado = dframe
+    resultado["Respuesta GPT3"] = 0.0
     resultado["Rango"] = None
-    resultado["Escala corpus"] = None
-    resultado["Coincidencia"] = None
 
     print(titulos)
 
     cuenta = 0
-    nCoincidencia = 0
     for indice in dframe.index:
         temp = orden
-        temp = temp.replace("@recurso","\"" + dframe["source"][indice] + "\"")
+        temp = temp.replace("@recurso", "\"" + dframe["source"][indice] + "\"")
         temp = temp.replace("@oracion", "\"" + dframe["sentence"][indice] + "\"")
         temp = temp.replace("@aEvaluar", "\"" + dframe["token"][indice] + "\"")
         respuestaGPT3 = evaluar(temp)
         respuestaGPT3 = filtro(respuestaGPT3)
         rango = asigRango(respuestaGPT3)
+        respuestaGPT3 = asigMedio(respuestaGPT3)
 
         complejidad = dframe["complexity"][indice]
-        complejidad = asigValor(complejidad)
-        if complejidad == respuestaGPT3:
-            comparacion = "SI"
-            nCoincidencia = nCoincidencia + 1
-        else:
-            comparacion = "NO"
 
-        resultado.at[indice, "Escala GPT3"] = respuestaGPT3
+        resultado.at[indice, "Respuesta GPT3"] = respuestaGPT3
         resultado.at[indice, "Rango"] = rango
-        resultado.at[indice, "Escala corpus"] = complejidad
-        resultado.at[indice, "Coincidencia"] = comparacion
 
-        imprimirFila(cuenta, indice, dframe, respuestaGPT3, rango, complejidad, comparacion)
+        imprimirFila(cuenta, indice, dframe, respuestaGPT3, rango, complejidad)
 
         cuenta = cuenta + 1
-        # time.sleep(0.5)
 
-    coincidencia = (nCoincidencia / dframe.shape[0]) * 100
-    print("Porcentaje coincidencia: " + str(round(coincidencia, 2)) + " %")
+    true = resultado.loc[:, "complexity"]
+    predicted = resultado.loc[:, "Respuesta GPT3"]
 
+    print("MAE: " + str(round(mean_absolute_error(true, predicted), 4)))
+    print("MSE: " + str(round(mean_squared_error(true, predicted), 4)))
+    print("RMSE: " + str(round(mean_squared_error(true, predicted, squared=False), 4)))
+    print("R2: " + str(round(r2_score(true, predicted), 4)))
     return resultado
