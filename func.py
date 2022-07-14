@@ -3,22 +3,22 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 
-escala = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
+lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
 titulos = "N\tToken\t\tRespuesta GPT\tRango\t\tComplejidad - compLex"
 
 
-def imprimirFila(cuenta, indice, dframe, respuestaGPT3, rango, complejidad):
+def imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad):
     token = dframe["token"][indice]
     if len(token) >= 8:
         token = token + "\t"
     else:
         token = token + "\t\t"
 
-    respuestaGPT3 = str(round(respuestaGPT3, 3))
-    if len(respuestaGPT3) >= 8:
-        respuestaGPT3 = respuestaGPT3 + "\t"
+    respuesta_gpt3 = str(round(respuesta_gpt3, 3))
+    if len(respuesta_gpt3) >= 8:
+        respuesta_gpt3 = respuesta_gpt3 + "\t"
     else:
-        respuestaGPT3 = respuestaGPT3 + "\t\t"
+        respuesta_gpt3 = respuesta_gpt3 + "\t\t"
 
     if len(rango) >= 8:
         rango = rango + "\t"
@@ -31,10 +31,10 @@ def imprimirFila(cuenta, indice, dframe, respuestaGPT3, rango, complejidad):
     else:
         complejidad = complejidad + "\t\t\t\t"
 
-    print(str(cuenta) + "\t" + token + respuestaGPT3 + rango + complejidad)
+    print(str(cuenta) + "\t" + token + respuesta_gpt3 + rango + complejidad)
 
 
-def asigValor(valor):
+def asig_valor(valor):
     escala = ""
 
     if valor == 0:
@@ -50,24 +50,25 @@ def asigValor(valor):
 
     return escala
 
-def asigMedio(valor_escala):
+
+def asig_medio(valor_escala):
     valor_medio = 0
 
-    if valor_escala == escala[0]:
+    if valor_escala == lista_escalas[0]:
         valor_medio = 0
-    elif valor_escala == escala[1]:
+    elif valor_escala == lista_escalas[1]:
         valor_medio = (0.01 + 0.25) / 2
-    elif valor_escala == escala[2]:
+    elif valor_escala == lista_escalas[2]:
         valor_medio = (0.26 + 0.50) / 2
-    elif valor_escala == escala[3]:
+    elif valor_escala == lista_escalas[3]:
         valor_medio = (0.51 + 0.75) / 2
-    elif valor_escala == escala[4]:
+    elif valor_escala == lista_escalas[4]:
         valor_medio = (0.76 + 1) / 2
 
     return valor_medio
 
-def asigRango(escala):
 
+def asig_rango(escala):
     rango = ""
 
     if escala == "very easy":
@@ -84,14 +85,14 @@ def asigRango(escala):
     return rango
 
 
-def filtro(respuestaGPT3):
+def filtro(respuesta_gpt3):
     resultado = ''
 
-    for valorEscala in escala:
+    for valorEscala in lista_escalas:
         nPalabras = len(valorEscala.split())
-        if nPalabras == 2 and respuestaGPT3.count(valorEscala) >= 1:
+        if nPalabras == 2 and respuesta_gpt3.count(valorEscala) >= 1:
             return valorEscala
-        elif respuestaGPT3.count(valorEscala) >= 1:
+        elif respuesta_gpt3.count(valorEscala) >= 1:
             resultado = valorEscala
 
     return resultado
@@ -124,17 +125,17 @@ def palabras_complejas(dframe, orden):
         temp = temp.replace("@recurso", "\"" + dframe["source"][indice] + "\"")
         temp = temp.replace("@oracion", "\"" + dframe["sentence"][indice] + "\"")
         temp = temp.replace("@aEvaluar", "\"" + dframe["token"][indice] + "\"")
-        respuestaGPT3 = evaluar(temp)
-        respuestaGPT3 = filtro(respuestaGPT3)
-        rango = asigRango(respuestaGPT3)
-        respuestaGPT3 = asigMedio(respuestaGPT3)
+        respuesta_gpt3 = evaluar(temp)
+        respuesta_gpt3 = filtro(respuesta_gpt3)
+        rango = asig_rango(respuesta_gpt3)
+        respuesta_gpt3 = asig_medio(respuesta_gpt3)
 
         complejidad = dframe["complexity"][indice]
 
-        resultado.at[indice, "Respuesta GPT3"] = respuestaGPT3
+        resultado.at[indice, "Respuesta GPT3"] = respuesta_gpt3
         resultado.at[indice, "Rango"] = rango
 
-        imprimirFila(cuenta, indice, dframe, respuestaGPT3, rango, complejidad)
+        imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad)
 
         cuenta = cuenta + 1
 
