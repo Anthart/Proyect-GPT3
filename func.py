@@ -102,7 +102,7 @@ def evaluar(orden):
 
 def palabras_complejas(dframe, orden):
     resultado = dframe
-    resultado["Respuesta GPT3"] = 0.0
+    resultado["Respuesta GPT3"] = None
     resultado["Rango"] = None
     resultado["Valor medio"] = 0.0
     resultado["compLex (complejidad a escala)"] = None
@@ -141,7 +141,7 @@ def palabras_complejas(dframe, orden):
     print("MSE: " + str(round(mean_squared_error(true, predicted), 4)))
     print("RMSE: " + str(round(mean_squared_error(true, predicted, squared=False), 4)))
     print("R2: " + str(round(r2_score(true, predicted), 4)))
-    print("Pearson: " + str(round(true.corr(predicted), 4)))
+    print("Pearson: " + str(round(true.corr(predicted, method='pearson'), 4)))
     print("spearman: " + str(round(true.corr(predicted, method='spearman'), 4)))
     print("\n")
 
