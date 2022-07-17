@@ -4,7 +4,6 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 
 lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
-titulos = "N\tToken\t\tRespuesta GPT\tRango\t\tComplejidad - compLex"
 plantilla = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
 
 
