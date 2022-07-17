@@ -5,33 +5,22 @@ from sklearn.metrics import r2_score
 
 lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
 titulos = "N\tToken\t\tRespuesta GPT\tRango\t\tComplejidad - compLex"
+plantilla = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
 
 
-def imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad):
+def imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, valor_medio_gpt3,
+                  complejidad, complejidad_escala):
+
     token = dframe["token"][indice]
-    if len(token) >= 8:
-        token = token + "\t"
-    else:
-        token = token + "\t\t"
 
-    respuesta_gpt3 = str(round(respuesta_gpt3, 3))
-    if len(respuesta_gpt3) >= 8:
-        respuesta_gpt3 = respuesta_gpt3 + "\t"
+    if respuesta_gpt3 == complejidad_escala:
+        comparacion = "Si"
     else:
-        respuesta_gpt3 = respuesta_gpt3 + "\t\t"
+        comparacion = "No"
 
-    if len(rango) >= 8:
-        rango = rango + "\t"
-    else:
-        rango = rango + "\t\t"
-
-    complejidad = str(round(complejidad, 3))
-    if len(complejidad) >= 8:
-        complejidad = complejidad + "\t\t\t"
-    else:
-        complejidad = complejidad + "\t\t\t\t"
-
-    print(str(cuenta) + "\t" + token + respuesta_gpt3 + rango + complejidad)
+    print(plantilla.format(cuenta, token, respuesta_gpt3, rango,
+                           valor_medio_gpt3, complejidad, complejidad_escala,
+                           comparacion))
 
 
 def asig_valor(valor):
@@ -116,8 +105,11 @@ def palabras_complejas(dframe, orden):
     resultado = dframe
     resultado["Respuesta GPT3"] = 0.0
     resultado["Rango"] = None
+    resultado["Valor medio"] = 0.0
+    resultado["compLex (complejidad a escala)"] = None
 
-    print(titulos)
+    print(plantilla.format("N", "Token", "Respuesta GPT", "Rango GPT", "Valor medio",
+                           "Complejidad compLex", "Rango compLex", "Comparacion") + "\n")
 
     cuenta = 0
     for indice in dframe.index:
@@ -126,24 +118,32 @@ def palabras_complejas(dframe, orden):
         temp = temp.replace("@oracion", "\"" + dframe["sentence"][indice] + "\"")
         temp = temp.replace("@aEvaluar", "\"" + dframe["token"][indice] + "\"")
         respuesta_gpt3 = evaluar(temp)
+
         respuesta_gpt3 = filtro(respuesta_gpt3)
         rango = asig_rango(respuesta_gpt3)
-        respuesta_gpt3 = asig_medio(respuesta_gpt3)
-
+        valor_medio_gpt3 = asig_medio(respuesta_gpt3)
         complejidad = dframe["complexity"][indice]
+        escala_complex = asig_valor(complejidad)
 
         resultado.at[indice, "Respuesta GPT3"] = respuesta_gpt3
         resultado.at[indice, "Rango"] = rango
+        resultado.at[indice, "Valor medio"] = valor_medio_gpt3
+        resultado.at[indice, "compLex (complejidad a escala)"] = escala_complex
 
-        imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad)
+        imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, valor_medio_gpt3,
+                      complejidad, escala_complex)
 
         cuenta = cuenta + 1
 
     true = resultado.loc[:, "complexity"]
-    predicted = resultado.loc[:, "Respuesta GPT3"]
+    predicted = resultado.loc[:, "Valor medio"]
 
     print("MAE: " + str(round(mean_absolute_error(true, predicted), 4)))
     print("MSE: " + str(round(mean_squared_error(true, predicted), 4)))
     print("RMSE: " + str(round(mean_squared_error(true, predicted, squared=False), 4)))
     print("R2: " + str(round(r2_score(true, predicted), 4)))
+    print("Pearson: " + str(round(true.corr(predicted), 4)))
+    print("spearman: " + str(round(true.corr(predicted, method='spearman'), 4)))
+    print("\n")
+
     return resultado
