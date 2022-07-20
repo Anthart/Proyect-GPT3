@@ -9,7 +9,6 @@ plantilla = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
 
 def imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, valor_medio_gpt3,
                   complejidad, complejidad_escala):
-
     token = dframe["token"][indice]
 
     if respuesta_gpt3 == complejidad_escala:
@@ -74,14 +73,14 @@ def asig_rango(escala):
 
 
 def filtro(respuesta_gpt3):
-    resultado = ''
+    resultado = ""
 
-    for valorEscala in lista_escalas:
-        nPalabras = len(valorEscala.split())
-        if nPalabras == 2 and respuesta_gpt3.count(valorEscala) >= 1:
-            return valorEscala
-        elif respuesta_gpt3.count(valorEscala) >= 1:
-            resultado = valorEscala
+    for valor_escala in lista_escalas:
+        n_palabras = len(valor_escala.split())
+        if n_palabras == 2 and respuesta_gpt3.count(valor_escala) >= 1:
+            return valor_escala
+        elif respuesta_gpt3.count(valor_escala) >= 1:
+            resultado = valor_escala
 
     return resultado
 
