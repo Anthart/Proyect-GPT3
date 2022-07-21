@@ -7,7 +7,7 @@ lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
 plantilla = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
 
 
-def imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, valor_medio_gpt3,
+def imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
                   complejidad, complejidad_escala):
     token = dframe["token"][indice]
 
@@ -17,7 +17,7 @@ def imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, valor_medio_gpt
         comparacion = "No"
 
     print(plantilla.format(cuenta, token, respuesta_gpt3, rango,
-                           valor_medio_gpt3, complejidad, complejidad_escala,
+                           complejidad_gpt3, complejidad, complejidad_escala,
                            comparacion))
 
 
@@ -72,6 +72,18 @@ def asig_rango(escala):
     return rango
 
 
+def promedio_valor_escala(dframe):
+
+    diccionario = {}
+
+    for valor in lista_escalas:
+        aux = dframe.loc[dframe["escala"] == valor]
+        calculo = aux["complexity"].mean()
+        diccionario[valor] = calculo
+
+    return diccionario
+
+
 def filtro(respuesta_gpt3):
     resultado = ""
 
@@ -99,14 +111,13 @@ def evaluar(orden):
     return response.choices[0].text
 
 
-def palabras_complejas(dframe, orden):
+def palabras_complejas(dframe, orden, dic_escalas):
     resultado = dframe
     resultado["Respuesta GPT3"] = None
     resultado["Rango"] = None
-    resultado["Valor medio"] = 0.0
-    resultado["compLex (complejidad a escala)"] = None
+    resultado["Complejidad GPT3"] = 0.0
 
-    print(plantilla.format("N", "Token", "Respuesta GPT", "Rango GPT", "Valor medio",
+    print(plantilla.format("N", "Token", "Respuesta GPT", "Rango GPT", "Complejidad GPT3",
                            "Complejidad compLex", "Rango compLex", "Comparacion") + "\n")
 
     cuenta = 0
@@ -119,22 +130,21 @@ def palabras_complejas(dframe, orden):
 
         respuesta_gpt3 = filtro(respuesta_gpt3)
         rango = asig_rango(respuesta_gpt3)
-        valor_medio_gpt3 = asig_medio(respuesta_gpt3)
+        complejidad_gpt3 = dic_escalas[respuesta_gpt3]
         complejidad = dframe["complexity"][indice]
-        escala_complex = asig_valor(complejidad)
+        escala_complex = dframe["escala"][indice]
 
         resultado.at[indice, "Respuesta GPT3"] = respuesta_gpt3
         resultado.at[indice, "Rango"] = rango
-        resultado.at[indice, "Valor medio"] = valor_medio_gpt3
-        resultado.at[indice, "compLex (complejidad a escala)"] = escala_complex
+        resultado.at[indice, "Complejidad GPT3"] = complejidad_gpt3
 
-        imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, valor_medio_gpt3,
+        imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
                       complejidad, escala_complex)
 
         cuenta = cuenta + 1
 
     true = resultado.loc[:, "complexity"]
-    predicted = resultado.loc[:, "Valor medio"]
+    predicted = resultado.loc[:, "Complejidad GPT3"]
 
     print("MAE: " + str(round(mean_absolute_error(true, predicted), 4)))
     print("MSE: " + str(round(mean_squared_error(true, predicted), 4)))
