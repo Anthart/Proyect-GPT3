@@ -73,7 +73,6 @@ def asig_rango(escala):
 
 
 def promedio_valor_escala(dframe):
-
     diccionario = {}
 
     for valor in lista_escalas:
@@ -106,7 +105,8 @@ def evaluar(orden):
         max_tokens=10,
         top_p=1,
         frequency_penalty=0,
-        presence_penalty=0
+        presence_penalty=0,
+        stop=["\n"]
     )
     return response.choices[0].text
 
