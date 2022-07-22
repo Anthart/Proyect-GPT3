@@ -1,5 +1,7 @@
 import pandas as pd
 from tokens import calcular_total_pagar
+from func import palabras_complejas
+from func import promedio_valor_escala
 
 if __name__ == "__main__":
     prompt = """ I'm reading fragments from the Bible, and some words are not easy to understand.
@@ -21,10 +23,10 @@ if __name__ == "__main__":
 
     df.loc[df["token"].isnull(), "token"] = "null"
 
-    datos = df.loc[0:, ["source", "sentence", "token", "complexity", "escala"]]
+    datos = df.loc[0:0, ["source", "sentence", "token", "complexity", "escala"]]
 
-    calcular_total_pagar(datos, prompt, 5, True)
+    # calcular_total_pagar(datos, prompt, 5, True)
 
-    # resultado = palabras_complejas(datos, prompt, promedio_valor_escala(df))
-    #
-    # resultado.to_excel('resultados/resultadoPrueba.xlsx')
+    resultado = palabras_complejas(datos, prompt, promedio_valor_escala(df))
+
+    resultado.to_excel('resultados/resultadoPrueba.xlsx')

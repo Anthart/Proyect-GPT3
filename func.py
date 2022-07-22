@@ -8,13 +8,8 @@ plantilla = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
 
 
 def imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
-                  complejidad, complejidad_escala):
+                  complejidad, complejidad_escala, comparacion):
     token = dframe["token"][indice]
-
-    if respuesta_gpt3 == complejidad_escala:
-        comparacion = "Si"
-    else:
-        comparacion = "No"
 
     print(plantilla.format(cuenta, token, respuesta_gpt3, rango,
                            complejidad_gpt3, complejidad, complejidad_escala,
@@ -114,10 +109,11 @@ def evaluar(orden):
 def palabras_complejas(dframe, orden, dic_escalas):
     resultado = dframe
     resultado["Respuesta GPT3"] = None
-    resultado["Rango"] = None
+    resultado["Rango GPT3"] = None
     resultado["Complejidad GPT3"] = 0.0
+    resultado["comparacion"] = None
 
-    print(plantilla.format("N", "Token", "Respuesta GPT", "Rango GPT", "Complejidad GPT3",
+    print(plantilla.format("N", "Token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
                            "Complejidad compLex", "Rango compLex", "Comparacion") + "\n")
 
     cuenta = 0
@@ -135,11 +131,18 @@ def palabras_complejas(dframe, orden, dic_escalas):
         escala_complex = dframe["escala"][indice]
 
         resultado.at[indice, "Respuesta GPT3"] = respuesta_gpt3
-        resultado.at[indice, "Rango"] = rango
+        resultado.at[indice, "Rango GPT3"] = rango
         resultado.at[indice, "Complejidad GPT3"] = complejidad_gpt3
 
+        if respuesta_gpt3 == escala_complex:
+            comparacion = "Si"
+        else:
+            comparacion = "No"
+
+        resultado.at[indice, "comparacion"] = comparacion
+
         imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
-                      complejidad, escala_complex)
+                      complejidad, escala_complex, comparacion)
 
         cuenta = cuenta + 1
 
@@ -153,5 +156,8 @@ def palabras_complejas(dframe, orden, dic_escalas):
     print("Pearson: " + str(round(true.corr(predicted, method='pearson'), 4)))
     print("spearman: " + str(round(true.corr(predicted, method='spearman'), 4)))
     print("\n")
+
+    resultado = resultado[["sentence", "token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
+                           "complexity", "escala", "comparacion"]]
 
     return resultado

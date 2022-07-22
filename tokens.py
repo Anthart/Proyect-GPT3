@@ -5,8 +5,6 @@ import pandas as pd
 def calcular_total_pagar(df, prompt, limit_max, to_file):
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
-    df = df.loc[0:]
-
     corpus_token = pd.DataFrame()
 
     count = 0
