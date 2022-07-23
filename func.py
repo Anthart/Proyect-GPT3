@@ -2,6 +2,7 @@ import openai
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
+import sys
 
 lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
 plantilla = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
@@ -122,7 +123,12 @@ def palabras_complejas(dframe, orden, dic_escalas):
         temp = temp.replace("@recurso", "\"" + dframe["source"][indice] + "\"")
         temp = temp.replace("@oracion", "\"" + dframe["sentence"][indice] + "\"")
         temp = temp.replace("@aEvaluar", "\"" + dframe["token"][indice] + "\"")
-        respuesta_gpt3 = evaluar(temp)
+
+        try:
+            respuesta_gpt3 = evaluar(temp)
+        except openai.error.OpenAIError:
+            resultado.to_csv("resultados/resultados_tem.csv")
+            sys.exit("Error openai")
 
         respuesta_gpt3 = filtro(respuesta_gpt3)
         rango = asig_rango(respuesta_gpt3)
@@ -149,15 +155,29 @@ def palabras_complejas(dframe, orden, dic_escalas):
     true = resultado.loc[:, "complexity"]
     predicted = resultado.loc[:, "Complejidad GPT3"]
 
-    print("MAE: " + str(round(mean_absolute_error(true, predicted), 4)))
-    print("MSE: " + str(round(mean_squared_error(true, predicted), 4)))
-    print("RMSE: " + str(round(mean_squared_error(true, predicted, squared=False), 4)))
-    print("R2: " + str(round(r2_score(true, predicted), 4)))
-    print("Pearson: " + str(round(true.corr(predicted, method='pearson'), 4)))
-    print("spearman: " + str(round(true.corr(predicted, method='spearman'), 4)))
+    mae = round(mean_absolute_error(true, predicted), 4)
+    mse = round(mean_squared_error(true, predicted), 4)
+    rmse = round(mean_squared_error(true, predicted, squared=False), 4)
+    r2 = round(r2_score(true, predicted), 4)
+    pearson = round(true.corr(predicted, method='pearson'), 4)
+    spearman = round(true.corr(predicted, method='spearman'), 4)
+
+    print("MAE: " + str(mae))
+    print("MSE: " + str(mse))
+    print("RMSE: " + str(rmse))
+    print("R2: " + str(r2))
+    print("Pearson: " + str(pearson))
+    print("Spearman: " + str(spearman))
     print("\n")
 
     resultado = resultado[["sentence", "token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
                            "complexity", "escala", "comparacion"]]
+
+    resultado["MAE"] = mae
+    resultado["MSE"] = mse
+    resultado["RMSE"] = rmse
+    resultado["R2"] = r2
+    resultado["Pearson"] = pearson
+    resultado["Sperman"] = spearman
 
     return resultado
