@@ -16,7 +16,7 @@ def calcular_total_pagar(df, prompt, limit_max, to_file):
 
     for indice in df.index:
         temp = prompt
-        temp = temp.replace("@recurso", "\"" + df["source"][indice] + "\"")
+        temp = temp.replace("@recurso", df["source"][indice])
         temp = temp.replace("@oracion", "\"" + df["sentence"][indice] + "\"")
         temp = temp.replace("@aEvaluar", "\"" + df["token"][indice] + "\"")
         tokens_prompt = len(tokenizer(temp)['input_ids'])

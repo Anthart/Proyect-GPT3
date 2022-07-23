@@ -1,10 +1,4 @@
-import pandas as pd
-from tokens import calcular_total_pagar
-from func import palabras_complejas
-from func import promedio_valor_escala
-
-if __name__ == "__main__":
-    prompt = ("I'm reading fragments from the Bible, and some words are not easy to understand. "
+ prompt = ("I'm reading fragments from the Bible, and some words are not easy to understand. "
               "I'm classifying these words into \"very easy\", \"easy\", \"neutral\", \"difficult\" and "
               "\"very difficult\".\n"
               "After reading the fragment \" However, no defects in axon pathfinding along the "
@@ -22,16 +16,3 @@ if __name__ == "__main__":
               "I'm classifying these words into \"very easy\", \"easy\", \"neutral\", "
               "\"difficult\" and \"very difficult\".\n"
               "After reading the fragment @oracion I find that word @aEvaluar is")
-
-    df = pd.read_excel("corpus/lcp_single_train_arreglo_escala.xlsx")
-
-    df.loc[df["token"].isnull(), "token"] = "null"
-
-    datos = df.loc[0:30, ["source", "sentence", "token", "complexity", "escala"]]
-
-    calcular_total_pagar(datos, prompt, 10, False)
-
-    resultado = palabras_complejas(datos, prompt, promedio_valor_escala(df))
-
-    resultado.to_excel('resultados/resultadoPrueba.xlsx')
-

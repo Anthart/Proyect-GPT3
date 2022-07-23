@@ -93,7 +93,7 @@ def filtro(respuesta_gpt3):
 
 
 def evaluar(orden):
-    openai.api_key = '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'
+    openai.api_key = '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'
     response = openai.Completion.create(
         model="text-davinci-002",
         prompt=orden,
@@ -120,7 +120,7 @@ def palabras_complejas(dframe, orden, dic_escalas):
     cuenta = 0
     for indice in dframe.index:
         temp = orden
-        temp = temp.replace("@recurso", "\"" + dframe["source"][indice] + "\"")
+        temp = temp.replace("@recurso", dframe["source"][indice])
         temp = temp.replace("@oracion", "\"" + dframe["sentence"][indice] + "\"")
         temp = temp.replace("@aEvaluar", "\"" + dframe["token"][indice] + "\"")
 
