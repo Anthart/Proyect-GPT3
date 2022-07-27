@@ -3,6 +3,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 import sys
+import numpy as np
 
 lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
 plantilla = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
@@ -71,10 +72,18 @@ def asig_rango(escala):
 def promedio_valor_escala(dframe):
     diccionario = {}
 
-    for valor in lista_escalas:
-        aux = dframe.loc[dframe["escala"] == valor]
-        calculo = aux["complexity"].mean()
-        diccionario[valor] = calculo
+    try:
+        diccionario = np.load('datos_promedio.npy', allow_pickle=True)
+        no_file = False
+    except FileNotFoundError:
+        no_file = True
+
+    if no_file:
+        for valor in lista_escalas:
+            aux = dframe.loc[dframe["escala"] == valor]
+            calculo = aux["complexity"].mean()
+            diccionario[valor] = calculo
+        np.save('datos_promedio.npy', diccionario)
 
     return diccionario
 

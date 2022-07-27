@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     datos = df.loc[0:30, ["source", "sentence", "token", "complexity", "escala"]]
 
-    calcular_total_pagar(datos, prompt, 10, False)
+    # calcular_total_pagar(datos, prompt, 5, True)
 
     resultado = palabras_complejas(datos, prompt, promedio_valor_escala(df))
 
