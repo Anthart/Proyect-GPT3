@@ -1,0 +1,11 @@
+prompt = ("I'm reading fragments from the Bible, and some words are not easy to understand. "
+              "I'm classifying these words into \"very easy\", \"easy\", "
+              "\"neutral\", \"difficult\" and \"very difficult\".\nAfter reading the fragment \" However, "
+              "no defects in axon pathfinding along the monosynaptic reflex arc or in muscle "
+              "spindle differentiation have been noted in PV KO mice, which develop normally and "
+              "show no apparent changes in their behavior or physical activity (Schwaller et al. 1999)."
+              " \". I find that word \"spindle\" is neutral\n\n###\n\n"
+              "After reading the fragment \" I will sprinkle clean water on you, "
+              "and you shall be clean: from all your filthiness, and from all your idols, will I cleanse you. \"."
+              "I find that word \"filthiness\" is easy\n\n###\n\n"
+              "After reading the fragment @oracion I find that word @aEvaluar is")
