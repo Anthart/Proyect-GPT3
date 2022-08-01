@@ -105,7 +105,7 @@ def filtro(respuesta_gpt3):
 
 
 def evaluar(orden):
-    openai.api_key = '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'
+    openai.api_key = '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'
     response = openai.Completion.create(
         model="text-davinci-002",
         prompt=orden,
