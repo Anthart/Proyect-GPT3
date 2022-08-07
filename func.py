@@ -1,19 +1,25 @@
+import os
 import openai
+import sys
+import json
+import pickle
+import time
+from datetime import datetime
+import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
-import sys
-import json
+from transformers import GPT2Tokenizer
 
 lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
 plantilla = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
 
 
-def imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
+def imprimir_fila(indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
                   complejidad, complejidad_escala, comparacion):
     token = dframe["token"][indice]
 
-    print(plantilla.format(cuenta, token, respuesta_gpt3, rango,
+    print(plantilla.format(indice, token, respuesta_gpt3, rango,
                            complejidad_gpt3, complejidad, complejidad_escala,
                            comparacion))
 
@@ -69,7 +75,7 @@ def asig_rango(escala):
     return rango
 
 
-def promedio_valor_escala(dframe):
+def promedio_valor_escala(name_file):
     diccionario = {}
 
     try:
@@ -80,6 +86,7 @@ def promedio_valor_escala(dframe):
         no_file = True
 
     if no_file:
+        dframe = pd.read_excel(name_file)
         for valor in lista_escalas:
             aux = dframe.loc[dframe["escala"] == valor]
             calculo = aux["complexity"].mean()
@@ -104,6 +111,35 @@ def filtro(respuesta_gpt3):
     return resultado
 
 
+def load_data():
+    with open("temp/datos_temp.pkl", "rb") as tf:
+        dicc = pickle.load(tf)
+
+    minimo = dicc["minimo"]
+    maximo = dicc["maximo"]
+    nombre_archivo = dicc["archivo"]
+
+    df = pd.read_csv(f"temp/{nombre_archivo}")
+
+    return df, minimo, maximo
+
+
+def temporal_storage(minimo, maximo, data):
+    try:
+        os.mkdir('temp')
+    except OSError:
+        print("Correpto !!\tCarpeta temp exite")
+
+    now = datetime.now()
+    nombre_archivo = f"{now.year}-{now.month}-{now.day}-{now.hour}-{now.second}.csv"
+    data.to_csv(f"temp/{nombre_archivo}")
+
+    dicc = {"minimo": minimo, "maximo": maximo, "archivo": nombre_archivo}
+
+    with open("temp/datos_temp.pkl", "wb") as tf:
+        pickle.dump(dicc, tf)
+
+
 def evaluar(orden):
     openai.api_key = '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'
     response = openai.Completion.create(
@@ -119,32 +155,60 @@ def evaluar(orden):
     return response.choices[0].text
 
 
-def palabras_complejas(dframe, orden, dic_escalas):
-    resultado = dframe
-    resultado["Respuesta GPT3"] = None
-    resultado["Rango GPT3"] = None
-    resultado["Complejidad GPT3"] = 0.0
-    resultado["comparacion"] = None
+def palabras_complejas(dframe, orden, dic_escalas, load=None):
+    if load is None:
+        resultado = dframe
+        resultado["Respuesta GPT3"] = None
+        resultado["Rango GPT3"] = None
+        resultado["Complejidad GPT3"] = 0.0
+        resultado["comparacion"] = None
+    elif load is not None:
+        resultado = load
+        frame = [resultado, dframe.loc[:]]
+        resultado = pd.concat(frame)
+        resultado = resultado.loc[:, ~resultado.columns.str.contains("Unnamed")]
+    else:
+        sys.exit("Error de ingreso de parametros")
+
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    last = time.time()
+    tokens_prompt = 0
+    peticiones = 0
 
     print(plantilla.format("N", "Token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
                            "Complejidad compLex", "Rango compLex", "Comparacion") + "\n")
 
-    cuenta = 0
     for indice in dframe.index:
         temp = orden
-        temp = temp.replace("@recurso", dframe["source"][indice])
+        temp = temp.replace("@recurso", "\"" + dframe["source"][indice] + "\"")
         temp = temp.replace("@oracion", "\"" + dframe["sentence"][indice] + "\"")
         temp = temp.replace("@aEvaluar", "\"" + dframe["token"][indice] + "\"")
 
         try:
             respuesta_gpt3 = evaluar(temp)
+        except openai.error.RateLimitError:
+            if indice - 1 != -1:
+                temporal_storage(indice, dframe.tail(1).index[0], resultado.loc[0:indice - 1])
+            sys.exit("Error de limite de peticion")
         except openai.error.OpenAIError:
-            resultado.to_csv("resultados/resultados_tem.csv")
+            if indice - 1 != -1:
+                temporal_storage(indice, dframe.tail(1).index[0], resultado.loc[0:indice - 1])
             sys.exit("Error openai")
 
-        respuesta_gpt3 = filtro(respuesta_gpt3)
+        try:
+            respuesta_gpt3 = filtro(respuesta_gpt3)
+            if respuesta_gpt3 == "":
+                raise KeyError
+        except KeyError:
+            temporal_storage(indice, dframe.tail(1).index[0], resultado.loc[0:indice - 1])
+            sys.exit("No se encontro el resultado esperado"
+                     " por GPT3")
+
+        tokens_prompt += len(tokenizer(temp)['input_ids'])
+        peticiones += 1
+
         rango = asig_rango(respuesta_gpt3)
-        complejidad_gpt3 = dic_escalas[respuesta_gpt3]
+        complejidad_gpt3 = round(dic_escalas[respuesta_gpt3], 15)
         complejidad = dframe["complexity"][indice]
         escala_complex = dframe["escala"][indice]
 
@@ -159,10 +223,24 @@ def palabras_complejas(dframe, orden, dic_escalas):
 
         resultado.at[indice, "comparacion"] = comparacion
 
-        imprimir_fila(cuenta, indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
+        imprimir_fila(indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
                       complejidad, escala_complex, comparacion)
 
-        cuenta = cuenta + 1
+        # ****************************** Control de Peticiones ***********************************
+        actual = time.time() - last
+
+        if actual >= 60:
+            tokens_prompt = 0
+            peticiones = 0
+            last = time.time()
+
+        if tokens_prompt >= 150000 or peticiones >= 55:
+            seconds_to_wait = 60 - actual
+            tokens_prompt = 0
+            peticiones = 0
+            time.sleep(seconds_to_wait)
+            last = time.time()
+        # ************************* Cierre de control de Peticiones ******************************
 
     true = resultado.loc[:, "complexity"]
     predicted = resultado.loc[:, "Complejidad GPT3"]
