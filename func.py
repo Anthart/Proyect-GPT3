@@ -141,7 +141,7 @@ def temporal_storage(minimo, maximo, data):
 
 
 def evaluar(orden):
-    openai.api_key = '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'
+    openai.api_key = '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'
     response = openai.Completion.create(
         model="text-davinci-002",
         prompt=orden,
@@ -186,14 +186,14 @@ def palabras_complejas(dframe, orden, dic_escalas, load=None):
 
         try:
             respuesta_gpt3 = evaluar(temp)
-        except openai.error.RateLimitError:
+        except openai.error.RateLimitError as limit_rate_error:
             if indice - 1 != -1:
                 temporal_storage(indice, dframe.tail(1).index[0], resultado.loc[0:indice - 1])
-            sys.exit("Error de limite de peticion")
-        except openai.error.OpenAIError:
+            sys.exit(str(limit_rate_error))
+        except openai.error.OpenAIError as error_openai:
             if indice - 1 != -1:
                 temporal_storage(indice, dframe.tail(1).index[0], resultado.loc[0:indice - 1])
-            sys.exit("Error openai")
+            sys.exit(str(error_openai))
 
         try:
             respuesta_gpt3 = filtro(respuesta_gpt3)
