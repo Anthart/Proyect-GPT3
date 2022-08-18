@@ -140,6 +140,23 @@ def temporal_storage(minimo, maximo, data):
         pickle.dump(dicc, tf)
 
 
+def guardar_metricas(metricas):
+    file = 'resultados_metricas.xlsx'
+    folder = 'resultados'
+    path = f'{folder}/{file}'
+
+    if not os.path.isdir(folder):
+        os.mkdir(folder)
+
+    if os.path.isfile(path):
+        pandas_metrics = pd.read_excel(path, index_col=[0])
+        pandas_metrics = pd.concat([pandas_metrics, metricas], ignore_index=True)
+    else:
+        pandas_metrics = metricas
+
+    pandas_metrics.to_excel(path)
+
+
 def evaluar(orden):
     openai.api_key = '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'
     response = openai.Completion.create(
@@ -155,7 +172,7 @@ def evaluar(orden):
     return response.choices[0].text
 
 
-def palabras_complejas(dframe, orden, dic_escalas, load=None):
+def palabras_complejas(dframe, orden, dic_escalas, version=None, save_result=None,  load=None):
     if load is None:
         resultado = dframe
         resultado["Respuesta GPT3"] = None
@@ -270,4 +287,12 @@ def palabras_complejas(dframe, orden, dic_escalas, load=None):
     resultado["Pearson"] = pearson
     resultado["Sperman"] = spearman
 
-    return resultado
+    if version is not None:
+        resultado_metricas = {"Version": [version], "MAE": [mae], "MSE": [mse],
+                              "RMSE": [rmse], "R2": [r2],
+                              "Pearson": [pearson], "Spearman": [spearman]}
+        resultado_metricas = pd.DataFrame(resultado_metricas)
+        guardar_metricas(resultado_metricas)
+
+    if save_result is not None:
+        resultado.to_excel('resultados/resultadoPrueba.xlsx')

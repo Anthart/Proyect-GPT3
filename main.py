@@ -3,6 +3,7 @@ from tokens import calcular_total_pagar
 from func import palabras_complejas
 from func import load_data
 from func import promedio_valor_escala
+from func import guardar_metricas
 import argparse
 
 if __name__ == "__main__":
@@ -47,9 +48,8 @@ if __name__ == "__main__":
     # calcular_total_pagar(datos, prompt, 10, True)
 
     if load is None:
-        resultado = palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train))
+        palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train))
     else:
-        resultado = palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train), load)
+        palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train), load)
 
-    resultado.to_excel('resultados/resultadoPrueba.xlsx')
 
