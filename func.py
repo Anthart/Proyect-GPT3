@@ -158,7 +158,7 @@ def guardar_metricas(metricas):
 
 
 def evaluar(orden):
-    openai.api_key = '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'
+    openai.api_key = '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'
     response = openai.Completion.create(
         model="text-davinci-002",
         prompt=orden,
@@ -172,7 +172,7 @@ def evaluar(orden):
     return response.choices[0].text
 
 
-def palabras_complejas(dframe, orden, dic_escalas, version=None, save_result=None,  load=None):
+def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=False,  load=None):
     if load is None:
         resultado = dframe
         resultado["Respuesta GPT3"] = None
@@ -287,12 +287,15 @@ def palabras_complejas(dframe, orden, dic_escalas, version=None, save_result=Non
     resultado["Pearson"] = pearson
     resultado["Sperman"] = spearman
 
-    if version is not None:
+    if version:
         resultado_metricas = {"Version": [version], "MAE": [mae], "MSE": [mse],
                               "RMSE": [rmse], "R2": [r2],
                               "Pearson": [pearson], "Spearman": [spearman]}
         resultado_metricas = pd.DataFrame(resultado_metricas)
         guardar_metricas(resultado_metricas)
 
-    if save_result is not None:
-        resultado.to_excel('resultados/resultadoPrueba.xlsx')
+    if save_result:
+        if version:
+            resultado.to_excel(f'resultados/resultado_{version}.xlsx')
+        else:
+            resultado.to_excel('resultados/resultado.xlsx')
