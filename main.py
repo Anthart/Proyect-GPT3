@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     df = pd.read_excel(file_corpus_test)
     df.loc[df["token"].isnull(), "token"] = "null"
-    datos = df.loc[minimo:maximo, ["source", "sentence", "token", "complexity", "escala"]]
+    datos = df.loc[minimo:, ["id", "source", "sentence", "token", "complexity", "escala"]]
 
     # calcular_total_pagar(datos, prompt, 10, True)
 

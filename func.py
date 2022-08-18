@@ -187,9 +187,9 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
     else:
         sys.exit("Error de ingreso de parametros")
 
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    # tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     last = time.time()
-    tokens_prompt = 0
+    # tokens_prompt = 0
     peticiones = 0
 
     print(plantilla.format("N", "Token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
@@ -221,7 +221,7 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
             sys.exit("No se encontro el resultado esperado"
                      " por GPT3")
 
-        tokens_prompt += len(tokenizer(temp)['input_ids'])
+        # tokens_prompt += len(tokenizer(temp)['input_ids'])
         peticiones += 1
 
         rango = asig_rango(respuesta_gpt3)
@@ -251,9 +251,10 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
             peticiones = 0
             last = time.time()
 
-        if tokens_prompt >= 150000 or peticiones >= 55:
+        # if tokens_prompt >= 150000 or peticiones >= 55:
+        if peticiones >= 55:
             seconds_to_wait = 60 - actual
-            tokens_prompt = 0
+            # tokens_prompt = 0
             peticiones = 0
             time.sleep(seconds_to_wait)
             last = time.time()
@@ -277,7 +278,7 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
     print("Spearman: " + str(spearman))
     print("\n")
 
-    resultado = resultado[["sentence", "token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
+    resultado = resultado[["id", "sentence", "token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
                            "complexity", "escala", "comparacion"]]
 
     resultado["MAE"] = mae
