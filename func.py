@@ -9,6 +9,7 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
+import numpy as np
 from transformers import GPT2Tokenizer
 
 lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
@@ -158,21 +159,52 @@ def guardar_metricas(metricas):
 
 
 def evaluar(orden):
-    openai.api_key = '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'
+    openai.api_key = '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'
     response = openai.Completion.create(
         model="text-davinci-002",
         prompt=orden,
         temperature=0,
-        max_tokens=10,
+        max_tokens=5,
         top_p=1,
         frequency_penalty=0,
         presence_penalty=0,
+        logprobs=10,
         stop=["\n"]
     )
-    return response.choices[0].text
+    respuesta = response.choices[0].text
+    prob_tokens = response.choices[0].logprobs.top_logprobs
+    return respuesta, prob_tokens
 
 
-def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=False,  load=None):
+def quitar_espacios(dicc: dict[str, float]) -> dict:
+    new_dicc = {}
+    for d in dicc:
+        new_dicc[d.replace(" ", "")] = dicc[d]
+    return new_dicc
+
+
+def logprob_to_prob(logprob: float) -> float:
+    return np.exp(logprob)
+
+
+def prob_for_label(label: str, logprobs: list[dict[str, float]]) -> float:
+    prob = 0.0
+    next_logprobs = quitar_espacios(logprobs[0])
+    for s, logprob in next_logprobs.items():
+        s = s.lower()
+        if label.lower() == s:
+            prob += logprob_to_prob(logprob)
+        elif label.lower().startswith(s):
+            rest_of_label = label[len(s):]
+            remaining_logprobs = logprobs[1:]
+            prob += logprob * prob_for_label(
+                rest_of_label,
+                remaining_logprobs,
+            )
+    return prob
+
+
+def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=False, load=None):
     if load is None:
         resultado = dframe
         resultado["Respuesta GPT3"] = None
@@ -202,7 +234,7 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
         temp = temp.replace("@aEvaluar", "\"" + dframe["token"][indice] + "\"")
 
         try:
-            respuesta_gpt3 = evaluar(temp)
+            respuesta_gpt3, prob_tokens = evaluar(temp)
         except openai.error.RateLimitError as limit_rate_error:
             if indice - 1 != -1:
                 temporal_storage(indice, dframe.tail(1).index[0], resultado.loc[0:indice - 1])
@@ -214,6 +246,7 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
 
         try:
             respuesta_gpt3 = filtro(respuesta_gpt3)
+            prob = prob_for_label(respuesta_gpt3, prob_tokens)
             if respuesta_gpt3 == "":
                 raise KeyError
         except KeyError:
@@ -299,4 +332,4 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
         if version:
             resultado.to_excel(f'resultados/resultado_{version}.xlsx')
         else:
-            resultado.to_excel('resultados/resultado.xlsx')
+            resultado.to_excel('resultados/resultado_version 12.xlsx')
