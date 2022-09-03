@@ -24,7 +24,7 @@ def calcular_total_pagar(df, prompt, limit_max, to_file):
         corpus_token.at[indice, "Total"] = tokens_prompt + limit_max
 
     total_prompt_mas_res = corpus_token["tokens"].sum() + corpus_token["Max response token"].sum()
-    total_prompt_mas_res *= (0.06 / 1000)
+    total_prompt_mas_res *= (0.02 / 1000)
 
     print(f"Total a pagar: {round(total_prompt_mas_res, 2)} $")
 

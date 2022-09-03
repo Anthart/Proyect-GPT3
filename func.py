@@ -13,16 +13,26 @@ import numpy as np
 from transformers import GPT2Tokenizer
 
 lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
-plantilla = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
+plantilla_resultados = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
+plantilla_porcentaje = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
 
 
 def imprimir_fila(indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
                   complejidad, complejidad_escala, comparacion):
     token = dframe["token"][indice]
 
-    print(plantilla.format(indice, token, respuesta_gpt3, rango,
-                           complejidad_gpt3, complejidad, complejidad_escala,
-                           comparacion))
+    print(plantilla_resultados.format(indice, token, respuesta_gpt3, rango,
+                                      complejidad_gpt3, complejidad, complejidad_escala,
+                                      comparacion))
+
+
+def imprimir_fila_porcent(indice, dframe, respuesta_gpt3, opcion1, opcion2,
+                          opcion3, opcion4, opcion5):
+    token = dframe["token"][indice]
+
+    print(plantilla_porcentaje.format(indice, token, respuesta_gpt3, opcion1,
+                                      opcion2, opcion3, opcion4,
+                                      opcion5))
 
 
 def asig_valor(valor):
@@ -176,10 +186,15 @@ def evaluar(orden):
     return respuesta, prob_tokens
 
 
-def quitar_espacios(dicc: dict[str, float]) -> dict:
+def pre_data_prob(dicc: dict[str, float]) -> dict:
     new_dicc = {}
+    r = 0
     for d in dicc:
-        new_dicc[d.replace(" ", "")] = dicc[d]
+        no_space = d.replace(" ", "")
+        if no_space in dicc.keys():
+            r = logprob_to_prob(dicc[no_space])
+        val = logprob_to_prob(dicc[d])
+        new_dicc[no_space] = round((val + r) * 100,2)
     return new_dicc
 
 
@@ -187,9 +202,14 @@ def logprob_to_prob(logprob: float) -> float:
     return np.exp(logprob)
 
 
+def logprobs_to_percent(logprobs: list[dict[str, float]]):
+    return None
+
+
 def prob_for_label(label: str, logprobs: list[dict[str, float]]) -> float:
     prob = 0.0
-    next_logprobs = quitar_espacios(logprobs[0])
+    label = label.replace(" ", "")
+    next_logprobs = pre_data_prob(logprobs[0])  # Observacion: posibilidades de error
     for s, logprob in next_logprobs.items():
         s = s.lower()
         if label.lower() == s:
@@ -204,13 +224,19 @@ def prob_for_label(label: str, logprobs: list[dict[str, float]]) -> float:
     return prob
 
 
-def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=False, load=None):
+def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=False, load=None,
+                       percent=False):
     if load is None:
         resultado = dframe
         resultado["Respuesta GPT3"] = None
         resultado["Rango GPT3"] = None
         resultado["Complejidad GPT3"] = 0.0
         resultado["comparacion"] = None
+        resultado["Porcentaje 1"] = ""
+        resultado["Porcentaje 2"] = ""
+        resultado["Porcentaje 3"] = ""
+        resultado["Porcentaje 4"] = ""
+        resultado["Porcentaje 5"] = ""
     elif load is not None:
         resultado = load
         frame = [resultado, dframe.loc[:]]
@@ -224,8 +250,12 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
     # tokens_prompt = 0
     peticiones = 0
 
-    print(plantilla.format("N", "Token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
-                           "Complejidad compLex", "Rango compLex", "Comparacion") + "\n")
+    if percent:
+        print(plantilla_porcentaje.format("N", "Token", "Respuesta GPT3", "Opcion 1", "Opcion 2",
+                                          "Opcion 3", "Opcion 4", "Opcion 5"))
+    else:
+        print(plantilla_resultados.format("N", "Token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
+                                          "Complejidad compLex", "Rango compLex", "Comparacion") + "\n")
 
     for indice in dframe.index:
         temp = orden
@@ -312,7 +342,8 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
     print("\n")
 
     resultado = resultado[["id", "sentence", "token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
-                           "complexity", "escala", "comparacion"]]
+                           "complexity", "escala", "comparacion", "Porcentaje 1", "Porcentaje 2",
+                           "Porcentaje 3", "Porcentaje 4", "Porcentaje 5"]]
 
     resultado["MAE"] = mae
     resultado["MSE"] = mse
