@@ -221,30 +221,17 @@ def logprobs_to_percent(prob: list[dict[str, float]]):
 
 def logprobs_display(logprobs: list[dict[str, float]]) -> list:
     probs = logprobs_to_percent(logprobs)
-    lista = []
+    lista = ["", "", "", "", ""]
     size = len(probs)
     count = 5
-    if size == 1:
-        lista_aux = list(probs[0].items())
-        tamano_1 = len(lista_aux)
-        if tamano_1 < count:
-            for i in range(count - tamano_1):
-                lista_aux.append([None, None])
-        for i in range(count):
-            lista.append(f"{lista_aux[i][0]}:{lista_aux[i][1]}")
-    elif size == 2:
-        lista1 = list(probs[0].items())
-        lista2 = list(probs[1].items())
-        tamano_l1 = len(lista1)
-        tamano_l2 = len(lista2)
-        if tamano_l1 < count:
-            for i in range(count - tamano_l1):
-                lista1.append([None, None])
-        elif tamano_l2 < count:
-            for i in range(count - tamano_l2):
-                lista1.append([None, None])
-        for i in range(count):
-            lista.append(f"{lista1[i][0]}:{lista1[i][1]},{lista2[i][0]}:{lista2[i][1]}")
+    for i in range(size):
+        items = list(probs[i].items())
+        text = "" if i == 0 else ","
+        for j in range(count):
+            if j <= len(items) - 1:
+                lista[j] = lista[j] + text + str(items[j][0]) + ":" + str(items[j][1])
+            else:
+                lista[j] = lista[j] + text + "None"
 
     return lista
 
