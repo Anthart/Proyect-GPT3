@@ -15,7 +15,7 @@ from transformers import GPT2Tokenizer
 
 lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
 plantilla_resultados = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
-plantilla_porcentaje = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
+plantilla_porcentaje = "{:^5} {:^20} {:^30} {:^30} {:^30} {:^30} {:^30} {:^30}"
 
 
 def imprimir_fila(indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
@@ -251,8 +251,7 @@ def logprobs_display(logprobs: list[dict[str, float]]) -> list:
 
 def prob_for_label(label: str, logprobs: list[dict[str, float]]) -> float:
     prob = 0.0
-    label = label.replace(" ", "")
-    next_logprobs = pre_data_prob(logprobs[0])  # Observacion: posibilidades de error
+    next_logprobs = logprobs[0]
     for s, logprob in next_logprobs.items():
         s = s.lower()
         if label.lower() == s:
@@ -343,6 +342,9 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
             comparacion = "No"
 
         resultado.at[indice, "comparacion"] = comparacion
+
+        for i in range(len(prob)):
+            resultado.at[indice, f"Porcentaje {i + 1}"] = prob[i]
 
         if percent:
             imprimir_fila_porcent(indice, dframe, respuesta_gpt3, prob[0], prob[1], prob[2], prob[3], prob[4])
