@@ -223,24 +223,26 @@ def logprobs_display(logprobs: list[dict[str, float]]) -> list:
     probs = logprobs_to_percent(logprobs)
     lista = []
     size = len(probs)
+    count = 5
     if size == 1:
-        for i in probs[0]:
-            lista.append(f"{i}:{probs[0][i]}")
+        lista_aux = list(probs[0].items())
+        tamano_1 = len(lista_aux)
+        if tamano_1 < count:
+            for i in range(count - tamano_1):
+                lista_aux.append([None, None])
+        for i in range(count):
+            lista.append(f"{lista_aux[i][0]}:{lista_aux[i][1]}")
     elif size == 2:
         lista1 = list(probs[0].items())
         lista2 = list(probs[1].items())
         tamano_l1 = len(lista1)
         tamano_l2 = len(lista2)
-        count = tamano_l1
-        if tamano_l1 > tamano_l2:
-            count = tamano_l1
-            for i in range(tamano_l1 - tamano_l2):
-                lista2.append([None, None])
-        elif tamano_l2 > tamano_l1:
-            count = tamano_l2
-            for i in range(tamano_l2 - tamano_l1):
+        if tamano_l1 < count:
+            for i in range(count - tamano_l1):
                 lista1.append([None, None])
-
+        elif tamano_l2 < count:
+            for i in range(count - tamano_l2):
+                lista1.append([None, None])
         for i in range(count):
             lista.append(f"{lista1[i][0]}:{lista1[i][1]},{lista2[i][0]}:{lista2[i][1]}")
 
@@ -383,7 +385,7 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
     print("\n")
 
     resultado = resultado[["id", "sentence", "token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
-                           "complexity", "escala", "comparacion", "MAE", "MSE", "RMSE", "R2", "Pearson", "Spearman" 
+                           "complexity", "escala", "comparacion", "MAE", "MSE", "RMSE", "R2", "Pearson", "Spearman",
                            "Porcentaje 1", "Porcentaje 2", "Porcentaje 3", "Porcentaje 4", "Porcentaje 5"]]
 
     if version:

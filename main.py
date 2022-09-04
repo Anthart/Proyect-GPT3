@@ -9,12 +9,12 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--percent", help="Muestra porcentaje de las respuestas", action="store_treu")
+    parser.add_argument("-p", "--percent", help="Muestra porcentaje de las respuestas", action="store_true")
     parser.add_argument("-l", "--load", help="Carga datos si existio algun error en el codigo", action="store_true")
     args = parser.parse_args()
 
     minimo = 0
-    maximo = 30
+    maximo = 1
     percent = False
     file_corpus_train = "corpus/lcp_single_train_arreglo_escala.xlsx"
     file_corpus_test = "corpus/test_depurado.xlsx"
@@ -68,13 +68,13 @@ if __name__ == "__main__":
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:maximo, ["id", "source", "sentence", "token", "complexity", "escala"]]
 
-    calcular_total_pagar(datos, prompt, 10, True)
+    # calcular_total_pagar(datos, prompt, 10, True)
 
-    # if load is None:
-    #     palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train),
-    #                        save_result=True, percent=percent)
-    # else:
-    #     palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train),
-    #                        save_result=True, load=load, percent=percent)
+    if load is None:
+        palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train),
+                           save_result=True, percent=percent)
+    else:
+        palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train),
+                           save_result=True, load=load, percent=percent)
 
 
