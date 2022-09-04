@@ -1,3 +1,4 @@
+import operator
 import os
 import openai
 import sys
@@ -186,24 +187,64 @@ def evaluar(orden):
     return respuesta, prob_tokens
 
 
+def ordenar_probs(dicc: dict[str, float]):
+    new_dicc = {}
+    dic_sort = sorted(dicc.items(), key=operator.itemgetter(1), reverse=True)
+    for item in dic_sort:
+        new_dicc[item[0]] = item[1]
+    return new_dicc
+
+
 def pre_data_prob(dicc: dict[str, float]) -> dict:
     new_dicc = {}
     r = 0
     for d in dicc:
         no_space = d.replace(" ", "")
-        if no_space in dicc.keys():
-            r = logprob_to_prob(dicc[no_space])
-        val = logprob_to_prob(dicc[d])
-        new_dicc[no_space] = round((val + r) * 100,2)
+        lista = list(dicc.keys())
+        lista.remove(d)
+        if no_space in lista:
+            r = np.exp(dicc[no_space])
+        val = np.exp(dicc[d])
+        new_dicc[no_space] = round((val + r) * 100, 2)
+        new_dicc = ordenar_probs(new_dicc)
     return new_dicc
 
 
-def logprob_to_prob(logprob: float) -> float:
-    return np.exp(logprob)
+def logprobs_to_percent(prob: list[dict[str, float]]):
+    new_prob = []
+    for i in range(len(prob)):
+        item = prob[i]
+        pre_data_prob(item)
+        new_prob.append(pre_data_prob(item))
+    return new_prob
 
 
-def logprobs_to_percent(logprobs: list[dict[str, float]]):
-    return None
+def logprobs_display(logprobs: list[dict[str, float]]) -> list:
+    probs = logprobs_to_percent(logprobs)
+    lista = []
+    size = len(probs)
+    if size == 1:
+        for i in probs[0]:
+            lista.append(f"{i}:{probs[0][i]}")
+    elif size == 2:
+        lista1 = list(probs[0].items())
+        lista2 = list(probs[1].items())
+        tamano_l1 = len(lista1)
+        tamano_l2 = len(lista2)
+        count = tamano_l1
+        if tamano_l1 > tamano_l2:
+            count = tamano_l1
+            for i in range(tamano_l1 - tamano_l2):
+                lista2.append([None, None])
+        elif tamano_l2 > tamano_l1:
+            count = tamano_l2
+            for i in range(tamano_l2 - tamano_l1):
+                lista1.append([None, None])
+
+        for i in range(count):
+            lista.append(f"{lista1[i][0]}:{lista1[i][1]},{lista2[i][0]}:{lista2[i][1]}")
+
+    return lista
 
 
 def prob_for_label(label: str, logprobs: list[dict[str, float]]) -> float:
@@ -213,7 +254,7 @@ def prob_for_label(label: str, logprobs: list[dict[str, float]]) -> float:
     for s, logprob in next_logprobs.items():
         s = s.lower()
         if label.lower() == s:
-            prob += logprob_to_prob(logprob)
+            prob += np.exp(logprob)
         elif label.lower().startswith(s):
             rest_of_label = label[len(s):]
             remaining_logprobs = logprobs[1:]
@@ -232,11 +273,8 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
         resultado["Rango GPT3"] = None
         resultado["Complejidad GPT3"] = 0.0
         resultado["comparacion"] = None
-        resultado["Porcentaje 1"] = ""
-        resultado["Porcentaje 2"] = ""
-        resultado["Porcentaje 3"] = ""
-        resultado["Porcentaje 4"] = ""
-        resultado["Porcentaje 5"] = ""
+        for i in range(5):
+            resultado[f"Porcentaje {i + 1}"] = ""
     elif load is not None:
         resultado = load
         frame = [resultado, dframe.loc[:]]
@@ -276,7 +314,8 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
 
         try:
             respuesta_gpt3 = filtro(respuesta_gpt3)
-            prob = prob_for_label(respuesta_gpt3, prob_tokens)
+            cant_palabras = len(respuesta_gpt3.split())
+            prob = logprobs_display(prob_tokens[0: cant_palabras])
             if respuesta_gpt3 == "":
                 raise KeyError
         except KeyError:
@@ -303,8 +342,11 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
 
         resultado.at[indice, "comparacion"] = comparacion
 
-        imprimir_fila(indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
-                      complejidad, escala_complex, comparacion)
+        if percent:
+            imprimir_fila_porcent(indice, dframe, respuesta_gpt3, prob[0], prob[1], prob[2], prob[3], prob[4])
+        else:
+            imprimir_fila(indice, dframe, respuesta_gpt3, rango, complejidad_gpt3,
+                          complejidad, escala_complex, comparacion)
 
         # ****************************** Control de Peticiones ***********************************
         actual = time.time() - last
@@ -326,36 +368,27 @@ def palabras_complejas(dframe, orden, dic_escalas, version=False, save_result=Fa
     true = resultado.loc[:, "complexity"]
     predicted = resultado.loc[:, "Complejidad GPT3"]
 
-    mae = round(mean_absolute_error(true, predicted), 4)
-    mse = round(mean_squared_error(true, predicted), 4)
-    rmse = round(mean_squared_error(true, predicted, squared=False), 4)
-    r2 = round(r2_score(true, predicted), 4)
-    pearson = round(true.corr(predicted, method='pearson'), 4)
-    spearman = round(true.corr(predicted, method='spearman'), 4)
+    metrics = {
+        "MAE": round(mean_absolute_error(true, predicted), 4),
+        "MSE": round(mean_squared_error(true, predicted), 4),
+        "RMSE": round(mean_squared_error(true, predicted, squared=False), 4),
+        "R2": round(r2_score(true, predicted), 4),
+        "Pearson": round(true.corr(predicted, method='pearson'), 4),
+        "Spearman": round(true.corr(predicted, method='spearman'), 4)
+    }
 
-    print("MAE: " + str(mae))
-    print("MSE: " + str(mse))
-    print("RMSE: " + str(rmse))
-    print("R2: " + str(r2))
-    print("Pearson: " + str(pearson))
-    print("Spearman: " + str(spearman))
+    for m in metrics:
+        resultado[m] = metrics[m]
+        print(f"{m}: {metrics[m]}")
     print("\n")
 
     resultado = resultado[["id", "sentence", "token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
-                           "complexity", "escala", "comparacion", "Porcentaje 1", "Porcentaje 2",
-                           "Porcentaje 3", "Porcentaje 4", "Porcentaje 5"]]
-
-    resultado["MAE"] = mae
-    resultado["MSE"] = mse
-    resultado["RMSE"] = rmse
-    resultado["R2"] = r2
-    resultado["Pearson"] = pearson
-    resultado["Sperman"] = spearman
+                           "complexity", "escala", "comparacion", "MAE", "MSE", "RMSE", "R2", "Pearson", "Spearman" 
+                           "Porcentaje 1", "Porcentaje 2", "Porcentaje 3", "Porcentaje 4", "Porcentaje 5"]]
 
     if version:
-        resultado_metricas = {"Version": [version], "MAE": [mae], "MSE": [mse],
-                              "RMSE": [rmse], "R2": [r2],
-                              "Pearson": [pearson], "Spearman": [spearman]}
+        resultado_metricas = {"Version": [version]}
+        resultado_metricas.update(metrics)
         resultado_metricas = pd.DataFrame(resultado_metricas)
         guardar_metricas(resultado_metricas)
 
