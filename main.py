@@ -1,10 +1,5 @@
 import pandas as pd
-from tokens import calcular_total_pagar
-from func import palabras_complejas
-from func import load_data
-from func import promedio_valor_escala
-from func import guardar_metricas
-from prompt_file import cargar_lista_prompt
+from Gpt3 import Gpt3
 import argparse
 
 if __name__ == "__main__":
@@ -15,23 +10,8 @@ if __name__ == "__main__":
 
     minimo = 0
     maximo = 1
-    percent = False
     file_corpus_train = "corpus/lcp_single_train_arreglo_escala.xlsx"
     file_corpus_test = "corpus/test_depurado.xlsx"
-
-    if args.load:
-        load, minimo, maximo = load_data()
-    else:
-        load = None
-
-    if args.percent:
-        percent = True
-
-    # lista_prompt = cargar_lista_prompt()
-    #
-    # version = 5
-    # version_prompt = lista_prompt["version"][version - 1]
-    # prompt = lista_prompt["prompt"][version - 1]
 
     prompt = (
         "I'm reading fragments from some source such as: bible, biomed and europarl, "
@@ -68,13 +48,10 @@ if __name__ == "__main__":
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:maximo, ["id", "source", "sentence", "token", "complexity", "escala"]]
 
-    # calcular_total_pagar(datos, prompt, 10, True)
+    gpt = Gpt3(datos, prompt)
+    # gpt.calcular_total_pagar()
 
-    if load is None:
-        palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train),
-                           save_result=True, percent=percent)
-    else:
-        palabras_complejas(datos, prompt, promedio_valor_escala(file_corpus_train),
-                           save_result=True, load=load, percent=percent)
+    gpt.process(gpt.promedio_valor_escala(file_corpus_train), save_result=True, load=args.load, percent=args.percent)
+
 
 
