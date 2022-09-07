@@ -16,12 +16,14 @@ from transformers import GPT2Tokenizer
 
 class Gpt3:
 
-    def __init__(self, datos, prompt):
+    def __init__(self, datos, prompt, key):
         self.__lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
         self.__plantilla_resultados = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
         self.__plantilla_porcentaje = "{:^5} {:^20} {:^30} {:^30} {:^30} {:^30} {:^30} {:^30}"
+        self.__means = {}
         self.__datos = datos
         self.__prompt = prompt
+        self.__key = key
 
     def __imprimir_fila(self, indice, respuesta_gpt3, rango, complejidad_gpt3,
                         complejidad, complejidad_escala, comparacion):
@@ -107,7 +109,7 @@ class Gpt3:
             json.dump(diccionario, tf)
             tf.close()
 
-        return diccionario
+        self.__means = diccionario
 
     def __filtro(self, respuesta_gpt3):
         resultado = ""
@@ -165,7 +167,7 @@ class Gpt3:
         pandas_metrics.to_excel(path)
 
     def __evaluar(self, orden):
-        openai.api_key = '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'
+        openai.api_key = self.__key
         response = openai.Completion.create(
             model="text-davinci-002",
             prompt=orden,
@@ -174,7 +176,7 @@ class Gpt3:
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
-            logprobs=10,
+            logprobs=5,
             stop=["\n"]
         )
         respuesta = response.choices[0].text
@@ -320,7 +322,7 @@ class Gpt3:
             return False
         return lista
 
-    def process(self, dic_escalas, version=False, save_result=False, load=False,
+    def process(self, version=False, save_result=False, load=False,
                 percent=False):
 
         load_data = self.__load_data() if load else None
@@ -385,7 +387,7 @@ class Gpt3:
             peticiones += 1
 
             rango = self.__asig_rango(respuesta_gpt3)
-            complejidad_gpt3 = round(dic_escalas[respuesta_gpt3], 15)
+            complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
             complejidad = self.__datos["complexity"][indice]
             escala_complex = self.__datos["escala"][indice]
 
@@ -458,3 +460,5 @@ class Gpt3:
                 resultado.to_excel(f'resultados/resultado_{version}.xlsx')
             else:
                 resultado.to_excel('resultados/resultado_version 12.xlsx')
+
+        return resultado

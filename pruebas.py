@@ -5,7 +5,7 @@ from prompt_file import cargar_lista_prompt
 from tokens import calcular_total_pagar
 import pandas as pd
 import openai
-from Gpt3 import *
+from gpt3 import *
 # respuesta_gpt3, prob = evaluar("hello, how are you?")
 # pro_m = prob_for_label("you", respuesta_gpt3[0].logprobs.top_logprobs)
 

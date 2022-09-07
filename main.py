@@ -1,5 +1,5 @@
 import pandas as pd
-from Gpt3 import Gpt3
+from gpt3 import Gpt3
 import argparse
 
 if __name__ == "__main__":
@@ -44,14 +44,14 @@ if __name__ == "__main__":
         "The following fragment comes from the @recurso and after reading the "
         "fragment @oracion I find that word @aEvaluar is")
 
-    df = pd.read_excel(file_corpus_test)
+    df = pd.read_excel(file_corpus_train)
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:maximo, ["id", "source", "sentence", "token", "complexity", "escala"]]
 
-    gpt = Gpt3(datos, prompt)
-    # gpt.calcular_total_pagar()
-
-    gpt.process(gpt.promedio_valor_escala(file_corpus_train), save_result=True, load=args.load, percent=args.percent)
+    gpt = Gpt3(datos, prompt, "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")
+    # gpt.calcular_total_pagar(to_file=True)
+    gpt.promedio_valor_escala(file_corpus_train)
+    gpt.process(save_result=False, load=args.load, percent=args.percent)
 
 
 
