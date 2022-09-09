@@ -1,4 +1,3 @@
-import operator
 import os
 import openai
 import sys
@@ -182,11 +181,8 @@ class Gpt3:
         return respuesta, prob_tokens
 
     def __ordenar_probs(self, dicc: dict[str, float]):
-        new_dicc = {}
-        dic_sort = sorted(dicc.items(), key=operator.itemgetter(1), reverse=True)
-        for item in dic_sort:
-            new_dicc[item[0]] = item[1]
-        return new_dicc
+        tuples_sort = sorted(dicc.items(), key=lambda item: item[1], reverse=True)
+        return {k: v for k, v in tuples_sort}
 
     def __pre_data_prob(self, dicc: dict[str, float]) -> dict:
         new_dicc = {}
@@ -204,8 +200,7 @@ class Gpt3:
 
     def __logprobs_to_percent(self, prob: list[dict[str, float]]):
         new_prob = []
-        for i in range(len(prob)):
-            item = prob[i]
+        for item in prob:
             self.__pre_data_prob(item)
             new_prob.append(self.__pre_data_prob(item))
         return new_prob

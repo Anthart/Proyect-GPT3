@@ -1,30 +1,13 @@
-import os.path
+from gpt3 import Gpt3
 import operator
-from prompt_file import guardar_prompt
-from prompt_file import cargar_lista_prompt
-from tokens import calcular_total_pagar
-import pandas as pd
-import openai
-from gpt3 import *
-# respuesta_gpt3, prob = evaluar("hello, how are you?")
-# pro_m = prob_for_label("you", respuesta_gpt3[0].logprobs.top_logprobs)
+from collections import OrderedDict
 
-# for item in prob:
-#     for dic in item:
-#         item[dic] = round(logprob_to_prob(item[dic]) * 100, 2)
 
-print(lista_escalas)
+def ordenar_probs(dicc: dict[str, float]):
+    tuples_sort = sorted(dicc.items(), key=lambda item: item[1], reverse=True)
+    return {k: v for k, v in tuples_sort}
 
-# dic = {
-#     "\n": -0.0017886201,
-#     "\n\n": -7.7011003,
-#     " ": -8.931325,
-#     "  ": -9.086402,
-#     "                ": -8.658414
-# }
-# dic = pre_data_prob(dic)
-# dic_sort = sorted(dic.items(), key=operator.itemgetter(1), reverse=True)
-# dic_aux = {}
-# for item in dic_sort:
-#     dic_aux[item[0]] = item[1]
-# print(dic_aux)
+
+dic = {"queso": 19, "leche": 5, "papa": 60}
+dic = ordenar_probs(dic)
+print(dic)
