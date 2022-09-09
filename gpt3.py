@@ -174,7 +174,7 @@ class Gpt3:
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
-            logprobs=5,
+            logprobs=4,
             stop=["\n"]
         )
         respuesta = response.choices[0].text
@@ -220,7 +220,7 @@ class Gpt3:
             text = "" if i == 0 else ","
             for j in range(count):
                 if j <= len(items) - 1:
-                    lista[j] = lista[j] + text + str(items[j][0]) + ":" + str(items[j][1])
+                    lista[j] = lista[j] + text + str(items[j][0]) + ":" + str(items[j][1]) + "%"
                 else:
                     lista[j] = lista[j] + text + "None"
         return lista
