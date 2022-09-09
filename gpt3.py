@@ -19,7 +19,7 @@ class Gpt3:
     def __init__(self, datos, prompt, key):
         self.__lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
         self.__plantilla_resultados = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
-        self.__plantilla_porcentaje = "{:^5} {:^20} {:^30} {:^30} {:^30} {:^30} {:^30} {:^30}"
+        self.__plantilla_porcentaje = "{:^5} {:^20} {:^20} {:^30} {:^30} {:^30} {:^30} {:^30}"
         self.__means = {}
         self.__datos = datos
         self.__prompt = prompt
@@ -33,13 +33,11 @@ class Gpt3:
                                                  complejidad_gpt3, complejidad, complejidad_escala,
                                                  comparacion))
 
-    def __imprimir_fila_porcent(self, indice, respuesta_gpt3, opcion1, opcion2,
-                                opcion3, opcion4, opcion5):
+    def __imprimir_fila_porcent(self, indice, respuesta_gpt3, respuesta_complex, opciones):
         token = self.__datos["token"][indice]
 
-        print(self.__plantilla_porcentaje.format(indice, token, respuesta_gpt3, opcion1,
-                                                 opcion2, opcion3, opcion4,
-                                                 opcion5))
+        print(self.__plantilla_porcentaje.format(indice, token, respuesta_gpt3, respuesta_complex, opciones[0],
+                                                 opciones[1], opciones[2], opciones[3]))
 
     def __asig_valor(self, valor):
         escala = ""
@@ -349,8 +347,8 @@ class Gpt3:
         peticiones = 0
 
         if percent:
-            print(self.__plantilla_porcentaje.format("N", "Token", "Respuesta GPT3", "Opcion 1", "Opcion 2",
-                                                     "Opcion 3", "Opcion 4", "Opcion 5"))
+            print(self.__plantilla_porcentaje.format("N", "Token", "Respuesta GPT3", "Respuesta CompLex", "Opcion 1",
+                                                     "Opcion 2", "Opcion 3", "Opcion 4", "Opcion 5"))
         else:
             print(self.__plantilla_resultados.format("N", "Token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
                                                      "Complejidad compLex", "Rango compLex", "Comparacion") + "\n")
@@ -406,7 +404,7 @@ class Gpt3:
                 resultado.at[indice, f"Porcentaje {i + 1}"] = prob[i]
 
             if percent:
-                self.__imprimir_fila_porcent(indice, respuesta_gpt3, prob[0], prob[1], prob[2], prob[3], prob[4])
+                self.__imprimir_fila_porcent(indice, respuesta_gpt3, escala_complex, prob)
             else:
                 self.__imprimir_fila(indice, respuesta_gpt3, rango, complejidad_gpt3,
                                      complejidad, escala_complex, comparacion)
