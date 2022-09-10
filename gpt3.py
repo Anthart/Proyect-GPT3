@@ -173,7 +173,7 @@ class Gpt3:
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
-            logprobs=4,
+            logprobs=5,
             stop=["\n"]
         )
         respuesta = response.choices[0].text
