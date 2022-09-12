@@ -16,13 +16,19 @@ from transformers import GPT2Tokenizer
 class Gpt3:
 
     def __init__(self, datos, prompt, key):
-        self.__lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
         self.__plantilla_resultados = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
         self.__plantilla_porcentaje = "{:^5} {:^20} {:^20} {:^30} {:^30} {:^30} {:^30} {:^30}"
         self.__means = {}
         self.__datos = datos
         self.__prompt = prompt
         self.__key = key
+        self.__escala_limite = {
+            "very easy": [0],
+            "easy": [0.1, 0.25],
+            "neutral": [0.26, 0.50],
+            "difficult": [0.51, 0.75],
+            "very difficult": [0.76, 1]
+        }
 
     def __imprimir_fila(self, indice, respuesta_gpt3, rango, complejidad_gpt3,
                         complejidad, complejidad_escala, comparacion):
@@ -41,50 +47,25 @@ class Gpt3:
     def __asig_valor(self, valor):
         escala = ""
 
-        if valor == 0:
-            escala = "very easy"
-        elif 0 < valor <= 0.25:
-            escala = "easy"
-        elif 0.25 < valor <= 0.50:
-            escala = "neutral"
-        elif 0.50 < valor <= 0.75:
-            escala = "difficult"
-        elif 0.75 < valor <= 1:
-            escala = "very difficult"
+        for key, item in self.__escala_limite.items():
+            if len(item) == 1:
+                escala = key
+            elif item[0] <= valor <= item[1]:
+                escala = key
 
         return escala
 
     def __asig_medio(self, valor_escala):
-        valor_medio = 0
-
-        if valor_escala == self.__lista_escalas[0]:
-            valor_medio = 0
-        elif valor_escala == self.__lista_escalas[1]:
-            valor_medio = (0.01 + 0.25) / 2
-        elif valor_escala == self.__lista_escalas[2]:
-            valor_medio = (0.26 + 0.50) / 2
-        elif valor_escala == self.__lista_escalas[3]:
-            valor_medio = (0.51 + 0.75) / 2
-        elif valor_escala == self.__lista_escalas[4]:
-            valor_medio = (0.76 + 1) / 2
-
-        return valor_medio
+        limites = self.__escala_limite[valor_escala]
+        if len(limites) == 1:
+            return 0
+        else:
+            valor1, valor2 = limites
+            return (valor1 + valor2) / 2
 
     def __asig_rango(self, escala):
-        rango = ""
-
-        if escala == "very easy":
-            rango = "0"
-        if escala == "easy":
-            rango = "0.01 - 0.25"
-        if escala == "neutral":
-            rango = "0.26 - 0.50"
-        if escala == "difficult":
-            rango = "0.51 - 0.75"
-        if escala == "very difficult":
-            rango = "0.76 - 1"
-
-        return rango
+        valor = self.__escala_limite.get(escala, "")
+        return f"{valor}".replace(",", " - ")
 
     def promedio_valor_escala(self, name_file):
         diccionario = {}
@@ -98,7 +79,7 @@ class Gpt3:
 
         if no_file:
             dframe = pd.read_excel(name_file)
-            for valor in self.__lista_escalas:
+            for valor in self.__escala_limite.keys():
                 aux = dframe.loc[dframe["escala"] == valor]
                 calculo = aux["complexity"].mean()
                 diccionario[valor] = calculo
@@ -111,7 +92,7 @@ class Gpt3:
     def __filtro(self, respuesta_gpt3):
         resultado = ""
 
-        for valor_escala in self.__lista_escalas:
+        for valor_escala in self.__escala_limite.keys():
             n_palabras = len(valor_escala.split())
             if n_palabras == 2 and respuesta_gpt3.count(valor_escala) >= 1:
                 return valor_escala
