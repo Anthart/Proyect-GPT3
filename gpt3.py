@@ -23,6 +23,11 @@ class Gpt3:
         self.__datos = datos
         self.__prompt = prompt
         self.__key = key
+        self.info_escala = pd.DataFrame({
+            "escala": self.__lista_escalas,
+            "minimo": [0, 0, 0.25, 0.5, 0.75],
+            "maximo": [0, 0.25, 0.5, 0.75, 1]
+        })
 
     def __imprimir_fila(self, indice, respuesta_gpt3, rango, complejidad_gpt3,
                         complejidad, complejidad_escala, comparacion):
@@ -36,9 +41,9 @@ class Gpt3:
         token = self.__datos["token"][indice]
 
         print(self.__plantilla_porcentaje.format(indice, token, respuesta_gpt3, respuesta_complex, opciones[0],
-                                                 opciones[1], opciones[2], opciones[3]))
+                                                 opciones[1], opciones[2],  opciones[3]))
 
-    def __asig_valor(self, valor):
+    def __asig_etiqueta(self, valor):
         escala = ""
 
         if valor == 0:
@@ -70,22 +75,6 @@ class Gpt3:
 
         return valor_medio
 
-    def __asig_rango(self, escala):
-        rango = ""
-
-        if escala == "very easy":
-            rango = "0"
-        if escala == "easy":
-            rango = "0.01 - 0.25"
-        if escala == "neutral":
-            rango = "0.26 - 0.50"
-        if escala == "difficult":
-            rango = "0.51 - 0.75"
-        if escala == "very difficult":
-            rango = "0.76 - 1"
-
-        return rango
-
     def promedio_valor_escala(self, name_file):
         diccionario = {}
 
@@ -107,6 +96,27 @@ class Gpt3:
             tf.close()
 
         self.__means = diccionario
+
+    def strat_3(self, respuesta_gpt3, probs):
+        valor_GP3 = 0
+
+        return valor_GP3
+
+    def __asig_rango(self, escala):
+        rango = ""
+
+        if escala == "very easy":
+            rango = "0"
+        if escala == "easy":
+            rango = "0.01 - 0.25"
+        if escala == "neutral":
+            rango = "0.26 - 0.50"
+        if escala == "difficult":
+            rango = "0.51 - 0.75"
+        if escala == "very difficult":
+            rango = "0.76 - 1"
+
+        return rango
 
     def __filtro(self, respuesta_gpt3):
         resultado = ""
@@ -194,7 +204,7 @@ class Gpt3:
             if no_space in lista:
                 r = np.exp(dicc[no_space])
             val = np.exp(dicc[d])
-            new_dicc[no_space] = round((val + r) * 100, 2)
+            new_dicc[no_space] = val + r
             new_dicc = self.__ordenar_probs(new_dicc)
         return new_dicc
 
@@ -215,7 +225,9 @@ class Gpt3:
             text = "" if i == 0 else ","
             for j in range(count):
                 if j <= len(items) - 1:
-                    lista[j] = lista[j] + text + str(items[j][0]) + ":" + str(items[j][1]) + "%"
+                    label = items[j][0]
+                    weight = round(items[j][1] * 100, 2)
+                    lista[j] = lista[j] + text + str(label) + ":" + str(weight) + "%"
                 else:
                     lista[j] = lista[j] + text + "None"
         return lista
