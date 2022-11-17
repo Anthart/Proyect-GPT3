@@ -11,7 +11,6 @@ from proyect_modules import *
 class Gpt3:
 
     def __init__(self, datos, prompt, key, load=False):
-        self.__lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
         self.__plantilla_resultados = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
         self.__plantilla_porcentaje = "{:^5} {:^20} {:^20} {:^30} {:^30} {:^30} {:^30} {:^30}"
         self.__means = {}
@@ -19,11 +18,13 @@ class Gpt3:
         self.__prompt = prompt
         self.__key = key
         self.load = load
-        self.info_escala = pd.DataFrame({
-            "escala": self.__lista_escalas,
-            "minimo": [0, 0, 0.25, 0.5, 0.75],
-            "maximo": [0, 0.25, 0.5, 0.75, 1]
-        })
+        self.__rango_escalas = {
+            'very easy': (0, 0),
+            'easy': (0.1, 0.25),
+            'neutral': (0.26, 0.50),
+            'difficult': (0.51, 0.75),
+            'very difficult': (0.76, 1)
+        }
 
     def __imprimir_fila(self, indice, respuesta_gpt3, rango, complejidad_gpt3,
                         complejidad, complejidad_escala, comparacion):
@@ -57,23 +58,22 @@ class Gpt3:
 
     def strat_1(self, valor_escala):
         valor_medio = 0
-
-        if valor_escala == self.__lista_escalas[0]:
+        lista_escalas = list(self.__rango_escalas.keys())
+        if valor_escala == lista_escalas[0]:
             valor_medio = 0
-        elif valor_escala == self.__lista_escalas[1]:
+        elif valor_escala == lista_escalas[1]:
             valor_medio = (0.01 + 0.25) / 2
-        elif valor_escala == self.__lista_escalas[2]:
+        elif valor_escala == lista_escalas[2]:
             valor_medio = (0.26 + 0.50) / 2
-        elif valor_escala == self.__lista_escalas[3]:
+        elif valor_escala == lista_escalas[3]:
             valor_medio = (0.51 + 0.75) / 2
-        elif valor_escala == self.__lista_escalas[4]:
+        elif valor_escala == lista_escalas[4]:
             valor_medio = (0.76 + 1) / 2
 
         return valor_medio
 
-    def strat_2(self, name_file):
+    def __strat_2(self, name_file):
         diccionario = {}
-
         try:
             tf = open("promedio.json", "r")
             diccionario = json.load(tf)
@@ -83,7 +83,7 @@ class Gpt3:
 
         if no_file:
             dframe = pd.read_excel(name_file)
-            for valor in self.__lista_escalas:
+            for valor in list(self.__rango_escalas.keys()):
                 aux = dframe.loc[dframe["escala"] == valor]
                 calculo = aux["complexity"].mean()
                 diccionario[valor] = calculo
@@ -94,9 +94,9 @@ class Gpt3:
         self.__means = diccionario
 
     def strat_3(self, respuesta_gpt3, probs):
-        valor_GP3 = 0
+        valor_gpt3 = 0
 
-        return valor_GP3
+        return valor_gpt3
 
     def __asig_rango(self, escala):
         rango = ""
@@ -117,7 +117,7 @@ class Gpt3:
     def __filtro(self, respuesta_gpt3):
         resultado = ""
 
-        for valor_escala in self.__lista_escalas:
+        for valor_escala in list(self.__rango_escalas.keys()):
             n_palabras = len(valor_escala.split())
             if n_palabras == 2 and respuesta_gpt3.count(valor_escala) >= 1:
                 return valor_escala
@@ -164,7 +164,10 @@ class Gpt3:
 
         return to_process
 
-    def process(self, version=False, save_result=False, percent=False):
+    def process(self, file_path="", version=False, save_result=False, percent=False):
+
+        if file_path != "":
+            self.__strat_2(file_path)
 
         resultado = self.data_to_process()
 
