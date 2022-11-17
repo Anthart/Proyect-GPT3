@@ -1,21 +1,16 @@
-import os
 import openai
 import sys
 import json
-import pickle
 import time
-from datetime import datetime
-import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
-import numpy as np
-from transformers import GPT2Tokenizer
+from proyect_modules import *
 
 
 class Gpt3:
 
-    def __init__(self, datos, prompt, key):
+    def __init__(self, datos, prompt, key, load=False):
         self.__lista_escalas = ['very easy', 'easy', 'neutral', 'difficult', 'very difficult']
         self.__plantilla_resultados = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
         self.__plantilla_porcentaje = "{:^5} {:^20} {:^20} {:^30} {:^30} {:^30} {:^30} {:^30}"
@@ -23,6 +18,7 @@ class Gpt3:
         self.__datos = datos
         self.__prompt = prompt
         self.__key = key
+        self.load = load
         self.info_escala = pd.DataFrame({
             "escala": self.__lista_escalas,
             "minimo": [0, 0, 0.25, 0.5, 0.75],
@@ -41,7 +37,7 @@ class Gpt3:
         token = self.__datos["token"][indice]
 
         print(self.__plantilla_porcentaje.format(indice, token, respuesta_gpt3, respuesta_complex, opciones[0],
-                                                 opciones[1], opciones[2],  opciones[3]))
+                                                 opciones[1], opciones[2], opciones[3]))
 
     def __asig_etiqueta(self, valor):
         escala = ""
@@ -59,7 +55,7 @@ class Gpt3:
 
         return escala
 
-    def __asig_medio(self, valor_escala):
+    def strat_1(self, valor_escala):
         valor_medio = 0
 
         if valor_escala == self.__lista_escalas[0]:
@@ -75,7 +71,7 @@ class Gpt3:
 
         return valor_medio
 
-    def promedio_valor_escala(self, name_file):
+    def strat_2(self, name_file):
         diccionario = {}
 
         try:
@@ -130,49 +126,6 @@ class Gpt3:
 
         return resultado
 
-    def __load_data(self):
-        with open("temp/datos_temp.pkl", "rb") as tf:
-            dicc = pickle.load(tf)
-
-        minimo = dicc["minimo"]
-        maximo = dicc["maximo"]
-        nombre_archivo = dicc["archivo"]
-
-        df = pd.read_csv(f"temp/{nombre_archivo}")
-
-        return df, minimo, maximo
-
-    def __temporal_storage(self, minimo, maximo, data):
-        try:
-            os.mkdir('temp')
-        except OSError:
-            print("Correpto !!\tCarpeta temp exite")
-
-        now = datetime.now()
-        nombre_archivo = f"{now.year}-{now.month}-{now.day}-{now.hour}-{now.second}.csv"
-        data.to_csv(f"temp/{nombre_archivo}")
-
-        dicc = {"minimo": minimo, "maximo": maximo, "archivo": nombre_archivo}
-
-        with open("temp/datos_temp.pkl", "wb") as tf:
-            pickle.dump(dicc, tf)
-
-    def __guardar_metricas(self, metricas):
-        file = 'resultados_metricas.xlsx'
-        folder = 'resultados'
-        path = f'{folder}/{file}'
-
-        if not os.path.isdir(folder):
-            os.mkdir(folder)
-
-        if os.path.isfile(path):
-            pandas_metrics = pd.read_excel(path, index_col=[0])
-            pandas_metrics = pd.concat([pandas_metrics, metricas], ignore_index=True)
-        else:
-            pandas_metrics = metricas
-
-        pandas_metrics.to_excel(path)
-
     def __evaluar(self, orden):
         openai.api_key = self.__key
         response = openai.Completion.create(
@@ -190,163 +143,30 @@ class Gpt3:
         prob_tokens = response.choices[0].logprobs.top_logprobs
         return respuesta, prob_tokens
 
-    def __ordenar_probs(self, dicc: dict[str, float]):
-        tuples_sort = sorted(dicc.items(), key=lambda item: item[1], reverse=True)
-        return {k: v for k, v in tuples_sort}
+    def data_to_process(self):
+        load_da = load_data_temp() if self.load else None
 
-    def __pre_data_prob(self, dicc: dict[str, float]) -> dict:
-        new_dicc = {}
-        r = 0
-        for d in dicc:
-            no_space = d.replace(" ", "")
-            lista = list(dicc.keys())
-            lista.remove(d)
-            if no_space in lista:
-                r = np.exp(dicc[no_space])
-            val = np.exp(dicc[d])
-            new_dicc[no_space] = val + r
-            new_dicc = self.__ordenar_probs(new_dicc)
-        return new_dicc
-
-    def __logprobs_to_percent(self, prob: list[dict[str, float]]):
-        new_prob = []
-        for item in prob:
-            self.__pre_data_prob(item)
-            new_prob.append(self.__pre_data_prob(item))
-        return new_prob
-
-    def __logprobs_display(self, logprobs: list[dict[str, float]]) -> list:
-        probs = self.__logprobs_to_percent(logprobs)
-        lista = ["", "", "", "", ""]
-        size = len(probs)
-        count = 5
-        for i in range(size):
-            items = list(probs[i].items())
-            text = "" if i == 0 else ","
-            for j in range(count):
-                if j <= len(items) - 1:
-                    label = items[j][0]
-                    weight = round(items[j][1] * 100, 2)
-                    lista[j] = lista[j] + text + str(label) + ":" + str(weight) + "%"
-                else:
-                    lista[j] = lista[j] + text + "None"
-        return lista
-
-    def __prob_for_label(self, label: str, logprobs: list[dict[str, float]]) -> float:
-        prob = 0.0
-        next_logprobs = logprobs[0]
-        for s, logprob in next_logprobs.items():
-            s = s.lower()
-            if label.lower() == s:
-                prob += np.exp(logprob)
-            elif label.lower().startswith(s):
-                rest_of_label = label[len(s):]
-                remaining_logprobs = logprobs[1:]
-                prob += logprob * self.__prob_for_label(
-                    rest_of_label,
-                    remaining_logprobs,
-                )
-        return prob
-
-    def calcular_total_pagar(self, cost=0.02, completion_length=10, to_file=False):
-        tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-
-        corpus_token = pd.DataFrame()
-
-        corpus_token["prompts"] = None
-        corpus_token["tokens"] = None
-        corpus_token["Max response token"] = None
-        corpus_token["Total"] = None
-
-        for indice in self.__datos.index:
-            temp = self.__prompt
-            temp = temp.replace("@recurso", self.__datos["source"][indice])
-            temp = temp.replace("@oracion", "\"" + self.__datos["sentence"][indice] + "\"")
-            temp = temp.replace("@aEvaluar", "\"" + self.__datos["token"][indice] + "\"")
-            tokens_prompt = len(tokenizer(temp)['input_ids'])
-            corpus_token.at[indice, "prompts"] = temp
-            corpus_token.at[indice, "tokens"] = tokens_prompt
-            corpus_token.at[indice, "Max response token"] = completion_length
-            corpus_token.at[indice, "Total"] = tokens_prompt + completion_length
-
-        total_prompt_mas_res = corpus_token["tokens"].sum() + corpus_token["Max response token"].sum()
-        total_prompt_mas_res *= (cost / 1000)
-
-        print(f"Total a pagar: {round(total_prompt_mas_res, 2)} $")
-
-        if to_file:
-            corpus_token.to_excel("resultados/precios_gpt3.xlsx")
-
-    @staticmethod
-    def guardar_prompt(prompt, version_prompt=None):
-        nombre_archivo = "versiones_prompt"
-        ruta = f"prompt_examples/{nombre_archivo}.xlsx"
-
-        try:
-            if version_prompt is not None:
-                int(version_prompt)
-        except ValueError:
-            return 'Error: se ha ingresado un valor no numero como version'
-
-        if not os.path.isdir("prompt_examples"):
-            os.mkdir("prompt_examples")
-
-        if os.path.isfile(ruta):
-            lista = Gpt3.cargar_lista_prompt()
-            total_prompts = lista.shape[0]
-            if version_prompt is None:
-                version_prompt = total_prompts + 1
-                datos = {
-                    'version': [f'version {version_prompt}'],
-                    'prompt': [prompt]
-                }
-                datos = pd.DataFrame(datos)
-                lista = pd.concat([lista, datos], ignore_index=True)
-            elif 0 < version_prompt <= total_prompts:
-                lista.at[version_prompt - 1, 'prompt'] = prompt
-            else:
-                return 'Error: numero de version no valido'
-
-        else:
-            datos = {
-                'version': ['version 1'],
-                'prompt': [prompt]
-            }
-            lista = pd.DataFrame(datos)
-
-        lista.to_excel(ruta)
-
-    @staticmethod
-    def cargar_lista_prompt():
-        nombre_archivo = "versiones_prompt"
-        ruta = f"prompt_examples/{nombre_archivo}.xlsx"
-        try:
-            lista = pd.read_excel(ruta, index_col=[0])
-        except FileNotFoundError:
-            print("No existe lista")
-            return False
-        return lista
-
-    def process(self, version=False, save_result=False, load=False,
-                percent=False):
-
-        load_data = self.__load_data() if load else None
-
-        if load_data is None:
-            resultado = self.__datos
-            resultado["Respuesta GPT3"] = None
-            resultado["Rango GPT3"] = None
-            resultado["Complejidad GPT3"] = 0.0
-            resultado["comparacion"] = None
+        if load_da is None:
+            to_process = self.__datos
+            to_process["Respuesta GPT3"] = None
+            to_process["Rango GPT3"] = None
+            to_process["Complejidad GPT3"] = 0.0
+            to_process["comparacion"] = None
             for i in range(5):
-                resultado[f"Porcentaje {i + 1}"] = ""
-        elif load_data is not None:
-            resultado = load_data
-            frame = [resultado, self.__datos.loc[:]]
-            resultado = pd.concat(frame)
-            resultado = resultado.loc[:, ~resultado.columns.str.contains("Unnamed")]
+                to_process[f"Porcentaje {i + 1}"] = ""
+        elif load_da is not None:
+            to_process = load_da
+            frame = [to_process, self.__datos.loc[:]]
+            to_process = pd.concat(frame)
+            to_process = to_process.loc[:, ~to_process.columns.str.contains("Unnamed")]
         else:
             sys.exit("Error de ingreso de parametros")
+
+        return to_process
+
+    def process(self, version=False, save_result=False, percent=False):
+
+        resultado = self.data_to_process()
 
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
         last = time.time()
@@ -370,21 +190,21 @@ class Gpt3:
                 respuesta_gpt3, prob_tokens = self.__evaluar(temp)
             except openai.error.RateLimitError as limit_rate_error:
                 if indice - 1 != -1:
-                    self.__temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+                    temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
                 sys.exit(str(limit_rate_error))
             except openai.error.OpenAIError as error_openai:
                 if indice - 1 != -1:
-                    self.__temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+                    temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
                 sys.exit(str(error_openai))
 
             try:
                 respuesta_gpt3 = self.__filtro(respuesta_gpt3)
                 cant_palabras = len(respuesta_gpt3.split())
-                prob = self.__logprobs_display(prob_tokens[0: cant_palabras])
+                prob = logprobs_display(prob_tokens[0: cant_palabras])
                 if respuesta_gpt3 == "":
                     raise KeyError
             except KeyError:
-                self.__temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+                temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
                 sys.exit("No se encontro el resultado esperado"
                          " por GPT3")
 
@@ -458,7 +278,7 @@ class Gpt3:
             resultado_metricas = {"Version": [version]}
             resultado_metricas.update(metrics)
             resultado_metricas = pd.DataFrame(resultado_metricas)
-            self.__guardar_metricas(resultado_metricas)
+            guardar_metricas(resultado_metricas)
 
         if save_result:
             if version:

@@ -1,6 +1,7 @@
 import pandas as pd
 from gpt3 import Gpt3
 import argparse
+from proyect_modules import calcular_total_pagar
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -48,10 +49,9 @@ if __name__ == "__main__":
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:maximo, ["id", "source", "sentence", "token", "complexity", "escala"]]
 
-    gpt = Gpt3(datos, prompt, "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")
-    # gpt.calcular_total_pagar(to_file=True)
-    gpt.promedio_valor_escala(file_corpus_train)
-    gpt.process(save_result=False, load=args.load, percent=args.percent)
+    gpt = Gpt3(datos, prompt, "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", load=args.load)
+    # calcular_total_pagar(prompt, datos)
+    gpt.process(save_result=False, percent=args.percent)
 
 
 
