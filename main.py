@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     gpt = Gpt3(datos, prompt, "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", load=args.load)
     # calcular_total_pagar(prompt, datos)
-    gpt.process(file_path=file_corpus_train, save_result=False, percent=args.percent)
+    gpt.process_all(file_path=file_corpus_train, save_result=False, percent=args.percent)
 
 
 

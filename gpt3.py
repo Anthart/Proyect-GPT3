@@ -6,6 +6,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 from proyect_modules import *
+from functools import reduce
 
 
 class Gpt3:
@@ -20,11 +21,19 @@ class Gpt3:
         self.load = load
         self.__rango_escalas = {
             'very easy': (0, 0),
-            'easy': (0.1, 0.25),
+            'easy': (0.01, 0.25),
             'neutral': (0.26, 0.50),
             'difficult': (0.51, 0.75),
             'very difficult': (0.76, 1)
         }
+
+    def __prompt_format(self, source, sentence, token):
+        prompt = self.__prompt
+        prompt = prompt.replace("@recurso", f"\"{source}\"")
+        prompt = prompt.replace("@oracion", f"\"{sentence}\"")
+        prompt = prompt.replace("@aEvaluar", f"\"{token}\"")
+        # prompt = prompt.replace("@aEvaluar", "\"" + self.__datos["token"][indice] + "\"")
+        return prompt
 
     def __imprimir_fila(self, indice, respuesta_gpt3, rango, complejidad_gpt3,
                         complejidad, complejidad_escala, comparacion):
@@ -57,20 +66,7 @@ class Gpt3:
         return escala
 
     def strat_1(self, valor_escala):
-        valor_medio = 0
-        lista_escalas = list(self.__rango_escalas.keys())
-        if valor_escala == lista_escalas[0]:
-            valor_medio = 0
-        elif valor_escala == lista_escalas[1]:
-            valor_medio = (0.01 + 0.25) / 2
-        elif valor_escala == lista_escalas[2]:
-            valor_medio = (0.26 + 0.50) / 2
-        elif valor_escala == lista_escalas[3]:
-            valor_medio = (0.51 + 0.75) / 2
-        elif valor_escala == lista_escalas[4]:
-            valor_medio = (0.76 + 1) / 2
-
-        return valor_medio
+        return reduce(lambda x, y: (x + y) / 2, self.__rango_escalas.get(valor_escala))
 
     def __strat_2(self, name_file):
         diccionario = {}
@@ -97,22 +93,6 @@ class Gpt3:
         valor_gpt3 = 0
 
         return valor_gpt3
-
-    def __asig_rango(self, escala):
-        rango = ""
-
-        if escala == "very easy":
-            rango = "0"
-        if escala == "easy":
-            rango = "0.01 - 0.25"
-        if escala == "neutral":
-            rango = "0.26 - 0.50"
-        if escala == "difficult":
-            rango = "0.51 - 0.75"
-        if escala == "very difficult":
-            rango = "0.76 - 1"
-
-        return rango
 
     def __filtro(self, respuesta_gpt3):
         resultado = ""
@@ -164,13 +144,42 @@ class Gpt3:
 
         return to_process
 
-    def process(self, file_path="", version=False, save_result=False, percent=False):
+    def process_data(self, indice, resultado):
+        temp = self.__prompt_format(
+            self.__datos["source"][indice],
+            self.__datos["sentence"][indice],
+            self.__datos["token"][indice]
+        )
+
+        try:
+            respuesta_gpt3, prob_tokens = self.__evaluar(temp)
+        except openai.error.RateLimitError as limit_rate_error:
+            if indice - 1 != -1:
+                temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+            sys.exit(str(limit_rate_error))
+        except openai.error.OpenAIError as error_openai:
+            if indice - 1 != -1:
+                temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+            sys.exit(str(error_openai))
+
+        try:
+            respuesta_gpt3 = self.__filtro(respuesta_gpt3)
+            cant_palabras = len(respuesta_gpt3.split())
+            prob = logprobs_display(prob_tokens[0: cant_palabras])
+            if respuesta_gpt3 == "":
+                raise KeyError
+        except KeyError:
+            temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+            sys.exit("No se encontro el resultado esperado"
+                     " por GPT3")
+        return temp, respuesta_gpt3, prob
+
+    def process_all(self, file_path="", version=False, save_result=False, percent=False):
 
         if file_path != "":
             self.__strat_2(file_path)
 
         resultado = self.data_to_process()
-
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
         last = time.time()
         tokens_prompt = 0
@@ -184,37 +193,13 @@ class Gpt3:
                                                      "Complejidad compLex", "Rango compLex", "Comparacion") + "\n")
 
         for indice in self.__datos.index:
-            temp = self.__prompt
-            temp = temp.replace("@recurso", "\"" + self.__datos["source"][indice] + "\"")
-            temp = temp.replace("@oracion", "\"" + self.__datos["sentence"][indice] + "\"")
-            temp = temp.replace("@aEvaluar", "\"" + self.__datos["token"][indice] + "\"")
 
-            try:
-                respuesta_gpt3, prob_tokens = self.__evaluar(temp)
-            except openai.error.RateLimitError as limit_rate_error:
-                if indice - 1 != -1:
-                    temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
-                sys.exit(str(limit_rate_error))
-            except openai.error.OpenAIError as error_openai:
-                if indice - 1 != -1:
-                    temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
-                sys.exit(str(error_openai))
-
-            try:
-                respuesta_gpt3 = self.__filtro(respuesta_gpt3)
-                cant_palabras = len(respuesta_gpt3.split())
-                prob = logprobs_display(prob_tokens[0: cant_palabras])
-                if respuesta_gpt3 == "":
-                    raise KeyError
-            except KeyError:
-                temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
-                sys.exit("No se encontro el resultado esperado"
-                         " por GPT3")
+            temp, respuesta_gpt3, prob = self.process_data(indice, resultado)
 
             tokens_prompt += len(tokenizer(temp)['input_ids'])
             peticiones += 1
 
-            rango = self.__asig_rango(respuesta_gpt3)
+            rango = reduce(lambda x, y: f'{str(x)} - {str(y)}', self.__rango_escalas.get(respuesta_gpt3))
             complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
             complejidad = self.__datos["complexity"][indice]
             escala_complex = self.__datos["escala"][indice]
