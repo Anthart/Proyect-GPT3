@@ -21,7 +21,7 @@ def pre_data_prob(dicc: dict[str, float]) -> dict:
     return new_dicc
 
 
-def __logprobs_to_percent(prob: list[dict[str, float]]):
+def logprobs_to_percent(prob: list[dict[str, float]]):
     new_prob = []
     for item in prob:
         pre_data_prob(item)
@@ -30,12 +30,12 @@ def __logprobs_to_percent(prob: list[dict[str, float]]):
 
 
 def logprobs_display(logprobs: list[dict[str, float]]) -> list:
-    probs = __logprobs_to_percent(logprobs)
+    #probs = logprobs_to_percent(logprobs)
     lista = ["", "", "", "", ""]
-    size = len(probs)
+    size = len(logprobs)
     count = 5
     for i in range(size):
-        items = list(probs[i].items())
+        items = list(logprobs[i].items())
         text = "" if i == 0 else ","
         for j in range(count):
             if j <= len(items) - 1:

@@ -8,6 +8,8 @@ from sklearn.metrics import r2_score
 from proyect_modules import *
 from functools import reduce
 
+from proyect_modules.probs_response import logprobs_to_percent
+
 
 class Gpt3:
 
@@ -91,6 +93,20 @@ class Gpt3:
 
     def strat_3(self, respuesta_gpt3, probs):
         valor_gpt3 = 0
+        dicc_puntos = {"very easy": 0, "easy": 0.25, "neutral": 0.5, "difficult": 0.75, "very difficult": 1}
+        list_keys = list(dicc_puntos.keys())
+
+        if respuesta_gpt3 == "very easy" or respuesta_gpt3 == "easy":
+            punto_es = list_keys[list_keys.index(respuesta_gpt3) + 1]
+            punto_val = dicc_puntos.get(punto_es)
+
+        elif respuesta_gpt3 == "difficult" or respuesta_gpt3 == "very difficult":
+            punto_es = list_keys[list_keys.index('neutral') - 1]
+            punto_val = dicc_puntos.get(punto_es)
+
+        else:
+            punto_val = dicc_puntos.get(respuesta_gpt3)
+
 
         return valor_gpt3
 
@@ -165,7 +181,7 @@ class Gpt3:
         try:
             respuesta_gpt3 = self.__filtro(respuesta_gpt3)
             cant_palabras = len(respuesta_gpt3.split())
-            prob = logprobs_display(prob_tokens[0: cant_palabras])
+            prob = logprobs_to_percent(prob_tokens[0: cant_palabras])
             if respuesta_gpt3 == "":
                 raise KeyError
         except KeyError:
@@ -214,6 +230,8 @@ class Gpt3:
                 comparacion = "No"
 
             resultado.at[indice, "comparacion"] = comparacion
+
+            prob = logprobs_display(prob)
 
             for i in range(len(prob)):
                 resultado.at[indice, f"Porcentaje {i + 1}"] = prob[i]
