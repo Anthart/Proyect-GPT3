@@ -91,22 +91,44 @@ class Gpt3:
 
         self.__means = diccionario
 
-    def strat_3(self, respuesta_gpt3, probs):
+    @staticmethod
+    def strat_3(respuesta_gpt3, probs):
         valor_gpt3 = 0
         dicc_puntos = {"very easy": 0, "easy": 0.25, "neutral": 0.5, "difficult": 0.75, "very difficult": 1}
         list_keys = list(dicc_puntos.keys())
+        prob_dicc = probs[0]
 
-        if respuesta_gpt3 == "very easy" or respuesta_gpt3 == "easy":
+        if prob_dicc.get(respuesta_gpt3, True):
+            print("La respuesta de GPT-3 no se encuentran en la lista de probabilidades")
+            return valor_gpt3
+
+        if respuesta_gpt3 in ["very easy", "easy"]:
             punto_es = list_keys[list_keys.index(respuesta_gpt3) + 1]
             punto_val = dicc_puntos.get(punto_es)
+            valor_gpt3 = (punto_val - 0.25 * prob_dicc.get(respuesta_gpt3))
+            for key in prob_dicc.keys():
+                if key in list_keys:
+                    if list_keys.index(respuesta_gpt3) < list_keys.index(key):
+                        valor_gpt3 += (0.25 * prob_dicc.get(key))
+                    elif list_keys.index(respuesta_gpt3) > list_keys.index(key):
+                        valor_gpt3 -= (0.25 * prob_dicc.get(key))
 
-        elif respuesta_gpt3 == "difficult" or respuesta_gpt3 == "very difficult":
-            punto_es = list_keys[list_keys.index('neutral') - 1]
+        elif respuesta_gpt3 in ["difficult", "very difficult"]:
+            punto_es = list_keys[list_keys.index(respuesta_gpt3) - 1]
             punto_val = dicc_puntos.get(punto_es)
-
+            valor_gpt3 = (punto_val + 0.25 * prob_dicc.get(respuesta_gpt3))
+            for key in prob_dicc.keys():
+                if key in list_keys:
+                    if list_keys.index(respuesta_gpt3) > list_keys.index(key):
+                        valor_gpt3 += (0.25 * prob_dicc.get(key))
+                    elif list_keys.index(respuesta_gpt3) < list_keys.index(key):
+                        valor_gpt3 -= (0.25 * prob_dicc.get(key))
         else:
-            punto_val = dicc_puntos.get(respuesta_gpt3)
-
+            keys = prob_dicc.keys()
+            valor_gpt3 = dicc_puntos.get(respuesta_gpt3)
+            for key in keys:
+                if key in list_keys:
+                    print()
 
         return valor_gpt3
 
@@ -230,6 +252,8 @@ class Gpt3:
                 comparacion = "No"
 
             resultado.at[indice, "comparacion"] = comparacion
+
+            print(prob)
 
             prob = logprobs_display(prob)
 
