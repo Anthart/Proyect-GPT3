@@ -92,13 +92,12 @@ class Gpt3:
         self.__means = diccionario
 
     @staticmethod
-    def strat_3(respuesta_gpt3, probs):
+    def strat_3(respuesta_gpt3, prob_dicc):
         valor_gpt3 = 0
         dicc_puntos = {"very easy": 0, "easy": 0.25, "neutral": 0.5, "difficult": 0.75, "very difficult": 1}
         list_keys = list(dicc_puntos.keys())
-        prob_dicc = probs[0]
 
-        if prob_dicc.get(respuesta_gpt3, True):
+        if respuesta_gpt3 not in list_keys:
             print("La respuesta de GPT-3 no se encuentran en la lista de probabilidades")
             return valor_gpt3
 
@@ -128,7 +127,10 @@ class Gpt3:
             valor_gpt3 = dicc_puntos.get(respuesta_gpt3)
             for key in keys:
                 if key in list_keys:
-                    print()
+                    if list_keys.index(respuesta_gpt3) > list_keys.index(key):
+                        valor_gpt3 -= (0.25 * prob_dicc.get(key))
+                    elif list_keys.index(respuesta_gpt3) < list_keys.index(key):
+                        valor_gpt3 += (0.25 * prob_dicc.get(key))
 
         return valor_gpt3
 
