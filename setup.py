@@ -9,5 +9,5 @@ setup(
     url="https://github.com/Anthart/Proyect-GPT3.git",
     packages=['proyect_modules'],
     zip_safe=False,
-    install_requires=["transformers", "openai", "pandas"]
+    install_requires=["transformers", "openai", "pandas", "scikit-learn"]
 )

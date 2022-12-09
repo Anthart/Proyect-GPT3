@@ -1,12 +1,12 @@
 import numpy as np
 
 
-def ordenar_probs(dicc: dict[str, float]):
+def ordenar_probs(dicc):
     tuples_sort = sorted(dicc.items(), key=lambda item: item[1], reverse=True)
     return {k: v for k, v in tuples_sort}
 
 
-def pre_data_prob(dicc: dict[str, float]) -> dict:
+def pre_data_prob(dicc) -> dict:
     new_dicc = {}
     r = 0
     for d in dicc:
@@ -21,7 +21,7 @@ def pre_data_prob(dicc: dict[str, float]) -> dict:
     return new_dicc
 
 
-def logprobs_to_percent(prob: list[dict[str, float]]):
+def logprobs_to_percent(prob):
     new_prob = []
     for item in prob:
         pre_data_prob(item)
@@ -29,7 +29,7 @@ def logprobs_to_percent(prob: list[dict[str, float]]):
     return new_prob
 
 
-def logprobs_display(logprobs: list[dict[str, float]]) -> list:
+def logprobs_display(logprobs):
     #probs = logprobs_to_percent(logprobs)
     lista = ["", "", "", "", ""]
     size = len(logprobs)
