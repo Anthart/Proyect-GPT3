@@ -1,7 +1,6 @@
 import pandas as pd
-from gpt3 import Gpt3
+from proyect_modules.gpt3 import Gpt3
 import argparse
-from proyect_modules import calcular_total_pagar
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -10,7 +9,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     minimo = 0
-    maximo = 1
+    maximo = 5
     file_corpus_train = "corpus/lcp_single_train_arreglo_escala.xlsx"
     file_corpus_test = "corpus/test_depurado.xlsx"
 
@@ -49,7 +48,7 @@ if __name__ == "__main__":
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:maximo, ["id", "source", "sentence", "token", "complexity", "escala"]]
 
-    gpt = Gpt3(datos, prompt, "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", load=args.load)
+    gpt = Gpt3(datos, prompt, "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", load=args.load)
     # calcular_total_pagar(prompt, datos)
     gpt.process_all(file_path=file_corpus_train, save_result=False, percent=args.percent)
 

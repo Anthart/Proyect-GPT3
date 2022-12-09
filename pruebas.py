@@ -1,4 +1,4 @@
-from gpt3 import Gpt3
+from proyect_modules.gpt3 import Gpt3
 import unittest
 
 

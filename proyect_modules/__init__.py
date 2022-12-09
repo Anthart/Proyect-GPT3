@@ -1,3 +1,6 @@
-from proyect_modules.file_operation import *
-from proyect_modules.total_pagar import *
-from proyect_modules.probs_response import logprobs_display
+__title__ = "proyectT"
+__version__ = "0.0.1"
+__author__ = "Anthart"
+__email__ = "ffarteaga98@gmail.com"
+__description__ = "Proyecto GPT3"
+

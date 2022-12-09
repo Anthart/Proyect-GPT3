@@ -1,3 +1,4 @@
+
 import openai
 import sys
 import json
@@ -5,10 +6,10 @@ import time
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
-from proyect_modules import *
 from functools import reduce
-
-from proyect_modules.probs_response import logprobs_to_percent
+from proyect_modules.probs_response import *
+from proyect_modules.file_operation import *
+from proyect_modules.total_pagar import *
 
 
 class Gpt3:
@@ -73,7 +74,7 @@ class Gpt3:
     def __strat_2(self, name_file):
         diccionario = {}
         try:
-            tf = open("promedio.json", "r")
+            tf = open("../promedio.json", "r")
             diccionario = json.load(tf)
             no_file = False
         except FileNotFoundError:
@@ -85,7 +86,7 @@ class Gpt3:
                 aux = dframe.loc[dframe["escala"] == valor]
                 calculo = aux["complexity"].mean()
                 diccionario[valor] = calculo
-            tf = open("promedio.json", "w")
+            tf = open("../promedio.json", "w")
             json.dump(diccionario, tf)
             tf.close()
 
@@ -96,41 +97,29 @@ class Gpt3:
         valor_gpt3 = 0
         dicc_puntos = {"very easy": 0, "easy": 0.25, "neutral": 0.5, "difficult": 0.75, "very difficult": 1}
         list_keys = list(dicc_puntos.keys())
+        total_entre_puntos = 1 / (len(list_keys) - 1)
+        criterio = 1
 
         if respuesta_gpt3 not in list_keys:
             print("La respuesta de GPT-3 no se encuentran en la lista de probabilidades")
             return valor_gpt3
 
-        if respuesta_gpt3 in ["very easy", "easy"]:
-            punto_es = list_keys[list_keys.index(respuesta_gpt3) + 1]
-            punto_val = dicc_puntos.get(punto_es)
-            valor_gpt3 = (punto_val - 0.25 * prob_dicc.get(respuesta_gpt3))
-            for key in prob_dicc.keys():
-                if key in list_keys:
-                    if list_keys.index(respuesta_gpt3) < list_keys.index(key):
-                        valor_gpt3 += (0.25 * prob_dicc.get(key))
-                    elif list_keys.index(respuesta_gpt3) > list_keys.index(key):
-                        valor_gpt3 -= (0.25 * prob_dicc.get(key))
+        if respuesta_gpt3 in ["difficult", "very difficult"]:
+            criterio *= -1
 
-        elif respuesta_gpt3 in ["difficult", "very difficult"]:
-            punto_es = list_keys[list_keys.index(respuesta_gpt3) - 1]
+        if respuesta_gpt3 not in ["neutral"]:
+            punto_es = list_keys[list_keys.index(respuesta_gpt3) + 1 * criterio]
             punto_val = dicc_puntos.get(punto_es)
-            valor_gpt3 = (punto_val + 0.25 * prob_dicc.get(respuesta_gpt3))
-            for key in prob_dicc.keys():
-                if key in list_keys:
-                    if list_keys.index(respuesta_gpt3) > list_keys.index(key):
-                        valor_gpt3 += (0.25 * prob_dicc.get(key))
-                    elif list_keys.index(respuesta_gpt3) < list_keys.index(key):
-                        valor_gpt3 -= (0.25 * prob_dicc.get(key))
+            valor_gpt3 = (punto_val - total_entre_puntos * prob_dicc.get(respuesta_gpt3) * criterio)
         else:
-            keys = prob_dicc.keys()
             valor_gpt3 = dicc_puntos.get(respuesta_gpt3)
-            for key in keys:
-                if key in list_keys:
-                    if list_keys.index(respuesta_gpt3) > list_keys.index(key):
-                        valor_gpt3 -= (0.25 * prob_dicc.get(key))
-                    elif list_keys.index(respuesta_gpt3) < list_keys.index(key):
-                        valor_gpt3 += (0.25 * prob_dicc.get(key))
+
+        for key in prob_dicc.keys():
+            if key in list_keys:
+                if list_keys.index(respuesta_gpt3) < list_keys.index(key):
+                    valor_gpt3 += (total_entre_puntos * prob_dicc.get(key)) * criterio
+                elif list_keys.index(respuesta_gpt3) > list_keys.index(key):
+                    valor_gpt3 -= (total_entre_puntos * prob_dicc.get(key)) * criterio
 
         return valor_gpt3
 
@@ -239,8 +228,10 @@ class Gpt3:
             tokens_prompt += len(tokenizer(temp)['input_ids'])
             peticiones += 1
 
+            # complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
+            complejidad_gpt3 = self.strat_3(respuesta_gpt3, prob[0])
+            respuesta_gpt3 = self.__asig_etiqueta(complejidad_gpt3)
             rango = reduce(lambda x, y: f'{str(x)} - {str(y)}', self.__rango_escalas.get(respuesta_gpt3))
-            complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
             complejidad = self.__datos["complexity"][indice]
             escala_complex = self.__datos["escala"][indice]
 
@@ -254,8 +245,6 @@ class Gpt3:
                 comparacion = "No"
 
             resultado.at[indice, "comparacion"] = comparacion
-
-            print(prob)
 
             prob = logprobs_display(prob)
 
