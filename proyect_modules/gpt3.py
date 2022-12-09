@@ -307,4 +307,4 @@ class Gpt3:
             else:
                 resultado.to_excel('resultados/resultado_version 12.xlsx')
 
-        return resultado
+       
