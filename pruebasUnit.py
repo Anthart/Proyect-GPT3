@@ -40,7 +40,7 @@ class TestGPT3Proyect(unittest.TestCase):
     #     resultados = Gpt3.strat_3("easy", self.probs[2])
     #     self.assertEqual(resultados, 0.45249)
 
-    def test_strat_4(self):
+    def test_strat3_4(self):
         resultado = Gpt3.strat_3("neutral", self.probs[3])
         self.assertEqual(resultado, 0.475)
 

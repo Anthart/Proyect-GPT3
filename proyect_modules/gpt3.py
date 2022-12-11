@@ -1,4 +1,3 @@
-
 import openai
 import sys
 import json
@@ -10,6 +9,7 @@ from functools import reduce
 from proyect_modules.probs_response import *
 from proyect_modules.file_operation import *
 from proyect_modules.total_pagar import *
+from datetime import datetime
 
 
 class Gpt3:
@@ -123,6 +123,35 @@ class Gpt3:
 
         return valor_gpt3
 
+    def strat_3_2(self, respuesta_gpt3, prod_dicc):
+        complejidad_gpt3 = 0
+        rango = self.__rango_escalas.get(respuesta_gpt3)
+        list_keys = list(self.__rango_escalas.keys())
+
+        if respuesta_gpt3 not in list_keys:
+            print("La respuesta de GPT-3 no se encuentran en la lista de probabilidades")
+            return complejidad_gpt3
+
+        v_entre_rango = rango[1] - (rango[0] - 0.01)
+
+        if respuesta_gpt3 == 'easy':
+            complejidad_gpt3 = rango[1] - (v_entre_rango * prod_dicc.get(respuesta_gpt3))
+
+        if respuesta_gpt3 in ['difficult', 'very difficult']:
+            complejidad_gpt3 = rango[0] + (v_entre_rango * prod_dicc.get(respuesta_gpt3))
+
+        if respuesta_gpt3 == 'neutral':
+            prod_dicc_keys = list(prod_dicc.keys())[1:]
+            complejidad_gpt3 = (rango[1] + rango[0]) / 2
+            for key in prod_dicc_keys:
+                if key in list_keys:
+                    if list_keys.index('neutral') > list_keys.index(key):
+                        complejidad_gpt3 -= ((v_entre_rango / 2) * prod_dicc.get(respuesta_gpt3))
+                    else:
+                        complejidad_gpt3 += ((v_entre_rango / 2) * prod_dicc.get(respuesta_gpt3))
+
+        return complejidad_gpt3
+
     def __filtro(self, respuesta_gpt3):
         resultado = ""
 
@@ -229,7 +258,7 @@ class Gpt3:
             peticiones += 1
 
             # complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
-            complejidad_gpt3 = self.strat_3(respuesta_gpt3, prob[0])
+            complejidad_gpt3 = self.strat_3_2(respuesta_gpt3, prob[0])
             respuesta_gpt3 = self.__asig_etiqueta(complejidad_gpt3)
             rango = reduce(lambda x, y: f'{str(x)} - {str(y)}', self.__rango_escalas.get(respuesta_gpt3))
             complejidad = self.__datos["complexity"][indice]
@@ -305,6 +334,4 @@ class Gpt3:
             if version:
                 resultado.to_excel(f'resultados/resultado_{version}.xlsx')
             else:
-                resultado.to_excel('resultados/resultado_version 12.xlsx')
-
-       
+                resultado.to_excel(f'resultados/resultado_prueba.xlsx')
