@@ -9,10 +9,13 @@ from functools import reduce
 from proyect_modules.probs_response import *
 from proyect_modules.file_operation import *
 from proyect_modules.total_pagar import *
-from datetime import datetime
 
 
 class Gpt3:
+
+    STRAT_1 = 'strat1'
+    STRAT_2 = 'strat2'
+    STRAT_3 = 'strat3'
 
     def __init__(self, datos, prompt, key, load=False):
         self.__plantilla_resultados = "{:^5} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20} {:^20}"
@@ -24,10 +27,10 @@ class Gpt3:
         self.load = load
         self.__rango_escalas = {
             'very easy': (0, 0),
-            'easy': (0.01, 0.25),
-            'neutral': (0.26, 0.50),
-            'difficult': (0.51, 0.75),
-            'very difficult': (0.76, 1)
+            'easy': (0, 0.25),
+            'neutral': (0.25, 0.50),
+            'difficult': (0.50, 0.75),
+            'very difficult': (0.75, 1)
         }
 
     def __prompt_format(self, source, sentence, token):
@@ -68,7 +71,7 @@ class Gpt3:
 
         return escala
 
-    def strat_1(self, valor_escala):
+    def __strat_1(self, valor_escala):
         return reduce(lambda x, y: (x + y) / 2, self.__rango_escalas.get(valor_escala))
 
     def __strat_2(self, name_file):
@@ -92,8 +95,7 @@ class Gpt3:
 
         self.__means = diccionario
 
-    @staticmethod
-    def strat_3(respuesta_gpt3, prob_dicc):
+    def __strat_3(self, respuesta_gpt3, prob_dicc):
         valor_gpt3 = 0
         dicc_puntos = {"very easy": 0, "easy": 0.25, "neutral": 0.5, "difficult": 0.75, "very difficult": 1}
         list_keys = list(dicc_puntos.keys())
@@ -123,7 +125,7 @@ class Gpt3:
 
         return valor_gpt3
 
-    def strat_3_2(self, respuesta_gpt3, prod_dicc):
+    def __strat_3_2(self, respuesta_gpt3, prod_dicc):
         complejidad_gpt3 = 0
         rango = self.__rango_escalas.get(respuesta_gpt3)
         list_keys = list(self.__rango_escalas.keys())
@@ -132,7 +134,7 @@ class Gpt3:
             print("La respuesta de GPT-3 no se encuentran en la lista de probabilidades")
             return complejidad_gpt3
 
-        v_entre_rango = rango[1] - (rango[0] - 0.01)
+        v_entre_rango = rango[1] - rango[0]
 
         if respuesta_gpt3 == 'easy':
             complejidad_gpt3 = rango[1] - (v_entre_rango * prod_dicc.get(respuesta_gpt3))
@@ -167,7 +169,7 @@ class Gpt3:
     def __evaluar(self, orden):
         openai.api_key = self.__key
         response = openai.Completion.create(
-            model="text-davinci-002",
+            model="text-davinci-003",
             prompt=orden,
             temperature=0,
             max_tokens=5,
@@ -258,9 +260,9 @@ class Gpt3:
             peticiones += 1
 
             # complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
-            complejidad_gpt3 = self.strat_3_2(respuesta_gpt3, prob[0])
+            complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
             respuesta_gpt3 = self.__asig_etiqueta(complejidad_gpt3)
-            rango = reduce(lambda x, y: f'{str(x)} - {str(y)}', self.__rango_escalas.get(respuesta_gpt3))
+            rango = reduce(lambda x, y: f'{x + 0.01} - {y}', self.__rango_escalas.get(respuesta_gpt3))
             complejidad = self.__datos["complexity"][indice]
             escala_complex = self.__datos["escala"][indice]
 
