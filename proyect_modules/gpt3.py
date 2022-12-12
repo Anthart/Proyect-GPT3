@@ -24,10 +24,10 @@ class Gpt3:
         self.load = load
         self.__rango_escalas = {
             'very easy': (0, 0),
-            'easy': (0.01, 0.25),
-            'neutral': (0.26, 0.50),
-            'difficult': (0.51, 0.75),
-            'very difficult': (0.76, 1)
+            'easy': (0, 0.25),
+            'neutral': (0.25, 0.50),
+            'difficult': (0.50, 0.75),
+            'very difficult': (0.75, 1)
         }
 
     def __prompt_format(self, source, sentence, token):
@@ -132,7 +132,7 @@ class Gpt3:
             print("La respuesta de GPT-3 no se encuentran en la lista de probabilidades")
             return complejidad_gpt3
 
-        v_entre_rango = rango[1] - (rango[0] - 0.01)
+        v_entre_rango = rango[1] - rango[0]
 
         if respuesta_gpt3 == 'easy':
             complejidad_gpt3 = rango[1] - (v_entre_rango * prod_dicc.get(respuesta_gpt3))
@@ -258,9 +258,9 @@ class Gpt3:
             peticiones += 1
 
             # complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
-            complejidad_gpt3 = self.strat_3_2(respuesta_gpt3, prob[0])
+            complejidad_gpt3 = self.strat_1(respuesta_gpt3)
             respuesta_gpt3 = self.__asig_etiqueta(complejidad_gpt3)
-            rango = reduce(lambda x, y: f'{str(x)} - {str(y)}', self.__rango_escalas.get(respuesta_gpt3))
+            rango = reduce(lambda x, y: f'{x + 0.01} - {y}', self.__rango_escalas.get(respuesta_gpt3))
             complejidad = self.__datos["complexity"][indice]
             escala_complex = self.__datos["escala"][indice]
 
