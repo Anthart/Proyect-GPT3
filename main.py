@@ -8,8 +8,8 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--load", help="Carga datos si existio algun error en el codigo", action="store_true")
     args = parser.parse_args()
 
-    minimo = 70
-    maximo = 80
+    minimo = 0
+    maximo = 10
     file_corpus_train = "corpus/lcp_single_train_arreglo_escala.xlsx"
     file_corpus_test = "corpus/test_depurado.xlsx"
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:maximo, ["id", "source", "sentence", "token", "complexity", "escala"]]
 
-    gpt = Gpt3(datos, prompt, "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", load=args.load)
+    gpt = Gpt3(datos, prompt, "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", load=args.load)
     # calcular_total_pagar(prompt, datos)
     gpt.process_all(file_path=file_corpus_train, save_result=True, percent=args.percent)
 

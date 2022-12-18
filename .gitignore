@@ -1,2 +1,5 @@
 dist
 aux.py
+data
+versions_prompt
+temp

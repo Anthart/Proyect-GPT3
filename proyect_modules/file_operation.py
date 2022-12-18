@@ -12,23 +12,20 @@ def load_data_temp():
     maximo = dicc["maximo"]
     nombre_archivo = dicc["archivo"]
 
-    df = pd.read_csv(f"temp/{nombre_archivo}")
+    df = pd.read_csv(f"temp/{nombre_archivo}", index_col=[0])
 
     return df, minimo, maximo
 
 
 def temporal_storage(minimo, maximo, data):
-    try:
+
+    if not os.path.exists("temp"):
         os.mkdir('temp')
-    except OSError:
-        print("Correpto !!\tCarpeta temp exite")
 
     now = datetime.now()
     nombre_archivo = f"{now.year}-{now.month}-{now.day}-{now.hour}-{now.second}.csv"
     data.to_csv(f"temp/{nombre_archivo}")
-
     dicc = {"minimo": minimo, "maximo": maximo, "archivo": nombre_archivo}
-
     with open("temp/datos_temp.pkl", "wb") as tf:
         pickle.dump(dicc, tf)
 

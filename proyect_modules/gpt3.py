@@ -2,6 +2,8 @@ import openai
 import sys
 import json
 import time
+
+import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
@@ -76,8 +78,12 @@ class Gpt3:
 
     def __strat_2(self, name_file):
         diccionario = {}
+
+        if not os.path.exists("data"):
+            os.mkdir("data")
+
         try:
-            tf = open("../promedio.json", "r")
+            tf = open("data/promedio.json", "r")
             diccionario = json.load(tf)
             no_file = False
         except FileNotFoundError:
@@ -89,7 +95,7 @@ class Gpt3:
                 aux = dframe.loc[dframe["escala"] == valor]
                 calculo = aux["complexity"].mean()
                 diccionario[valor] = calculo
-            tf = open("../promedio.json", "w")
+            tf = open("data/promedio.json", "w")
             json.dump(diccionario, tf)
             tf.close()
 
@@ -184,7 +190,7 @@ class Gpt3:
         return respuesta, prob_tokens
 
     def data_to_process(self):
-        load_da = load_data_temp() if self.load else None
+        load_da, minimo, maximo = load_data_temp() if self.load else (None, None, None)
 
         if load_da is None:
             to_process = self.__datos
@@ -194,15 +200,16 @@ class Gpt3:
             to_process["comparacion"] = None
             for i in range(5):
                 to_process[f"Porcentaje {i + 1}"] = ""
+            minimo = 0
+            maximo = self.__datos.shape[0] - 1
+
         elif load_da is not None:
             to_process = load_da
-            frame = [to_process, self.__datos.loc[:]]
-            to_process = pd.concat(frame)
-            to_process = to_process.loc[:, ~to_process.columns.str.contains("Unnamed")]
+            to_process = pd.concat([to_process, self.__datos[minimo:]], ignore_index=True)
         else:
             sys.exit("Error de ingreso de parametros")
 
-        return to_process
+        return to_process, minimo, maximo
 
     def process_data(self, indice, resultado):
         temp = self.__prompt_format(
@@ -220,7 +227,7 @@ class Gpt3:
         except openai.error.OpenAIError as error_openai:
             if indice - 1 != -1:
                 temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
-            sys.exit(str(error_openai))
+            sys.exit("Error: " + str(error_openai))
 
         try:
             respuesta_gpt3 = self.__filtro(respuesta_gpt3)
@@ -239,7 +246,7 @@ class Gpt3:
         if file_path != "":
             self.__strat_2(file_path)
 
-        resultado = self.data_to_process()
+        resultado, minimo, maximo = self.data_to_process()
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
         last = time.time()
         tokens_prompt = 0
@@ -252,7 +259,8 @@ class Gpt3:
             print(self.__plantilla_resultados.format("N", "Token", "Respuesta GPT3", "Rango GPT3", "Complejidad GPT3",
                                                      "Complejidad compLex", "Rango compLex", "Comparacion") + "\n")
 
-        for indice in self.__datos.index:
+        range_index = pd.RangeIndex(minimo, maximo + 1, 1)
+        for indice in range_index:
 
             temp, respuesta_gpt3, prob = self.process_data(indice, resultado)
 
@@ -296,7 +304,7 @@ class Gpt3:
                 peticiones = 0
                 last = time.time()
 
-            if tokens_prompt >= 150000 or peticiones >= 55:
+            if tokens_prompt >= 100000 or peticiones >= 45:
                 # if peticiones >= 55:
                 seconds_to_wait = 60 - actual
                 tokens_prompt = 0
