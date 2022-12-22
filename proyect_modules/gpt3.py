@@ -344,4 +344,4 @@ class Gpt3:
             if version:
                 resultado.to_excel(f'resultados/resultado_{version}.xlsx')
             else:
-                resultado.to_excel(f'resultados/resultado_prueba.xlsx')
+                resultado.to_excel(f'resultados/resultado_strat3_version11.xlsx')
