@@ -2,6 +2,8 @@ import pandas as pd
 from proyect_modules.gpt3 import Gpt3
 import argparse
 
+from proyect_modules.total_pagar import calcular_total_pagar
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--percent", help="Muestra porcentaje de las respuestas", action="store_true")
@@ -9,7 +11,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     minimo = 0
-    maximo = 30
+    maximo = 29
     file_corpus_train = "corpus/lcp_single_train_arreglo_escala.xlsx"
     file_corpus_test = "corpus/test_depurado.xlsx"
 
@@ -23,24 +25,24 @@ if __name__ == "__main__":
         "no defects in axon pathfinding along the monosynaptic reflex arc or in muscle "
         "spindle differentiation have been noted in PV KO mice, which develop normally and "
         "show no apparent changes in their behavior or physical activity (Schwaller et al. 1999)."
-        " \". I find that word \"spindle\" is neutral\n\n###\n\n"
+        " \". I find that word \"spindle\" is \"neutral\"\n\n###\n\n"
         "The following fragment comes from the \"bible\" and after reading the "
         "fragment \" I will sprinkle clean water on you, "
         "and you shall be clean: from all your filthiness, and from all your idols, will I cleanse you. \"."
-        "I find that word \"filthiness\" is easy\n\n###\n\n"
+        "I find that word \"filthiness\" is \"easy\"\n\n###\n\n"
         "The following fragment comes from the \"biomed\" and "
         "after reading the fragment \" Moreover, acute dosing does not recapitulate the "
         "marked learning deficits produced in rodents [15,16] by chronic exposure to dopamine D2R "
-        "antagonists [6,7] \" . I find that word \"antagonists\" is difficult\n\n###\n\n"
+        "antagonists [6,7] \" . I find that word \"antagonists\" is \"difficult\"\n\n###\n\n"
         "The following fragment comes from the \"biomed\" and after reading the fragment "
         "\" Thrombus formation on fissured atherosclerotic "
         "plaques is the precipitating event in the transition from a stable or subclinical atherosclerotic"
         "disease and leads to acute myocardial infarction, ischemic stroke or peripheral arterial occlusion. "
-        "\". I find that word \"Thrombus\" is very difficult\n\n###\n\n"
+        "\". I find that word \"Thrombus\" is \"very difficult\"\n\n###\n\n"
         "The following fragment comes from the \"bible\" and "
         "after reading the fragment \" Mount Sinai, all it, smoked, because Yahweh descended "
         "on it in fire; and its smoke ascended like the smoke of a furnace, and the whole mountain quaked "
-        "greatly. \". I find that word \"fire\" is very easy\n\n###\n\n"
+        "greatly. \". I find that word \"fire\" is \"very easy\"\n\n###\n\n"
         "The following fragment comes from the @recurso and after reading the "
         "fragment @oracion I find that word @aEvaluar is")
 
@@ -48,7 +50,8 @@ if __name__ == "__main__":
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:maximo, ["id", "source", "sentence", "token", "complexity", "escala"]]
 
-    gpt = Gpt3(datos, prompt, "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", load=args.load)
+    gpt = Gpt3(datos, prompt, "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", load=args.load)
+
     # calcular_total_pagar(prompt, datos)
     gpt.process_all(file_path=file_corpus_train, save_result=True, percent=args.percent)
 
