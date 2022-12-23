@@ -267,8 +267,8 @@ class Gpt3:
             tokens_prompt += len(tokenizer(temp)['input_ids'])
             peticiones += 1
 
-            # complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
-            complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
+            complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
+            # complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
             respuesta_gpt3 = self.__asig_etiqueta(complejidad_gpt3)
             rango = reduce(lambda x, y: f'{x + 0.01} - {y}', self.__rango_escalas.get(respuesta_gpt3))
             complejidad = self.__datos["complexity"][indice]
@@ -344,4 +344,4 @@ class Gpt3:
             if version:
                 resultado.to_excel(f'resultados/resultado_{version}.xlsx')
             else:
-                resultado.to_excel(f'resultados/resultado_strat3_version11.xlsx')
+                resultado.to_excel(f'resultados/resultado_strat2_version11.xlsx')
