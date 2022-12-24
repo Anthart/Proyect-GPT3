@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from proyect_modules.gpt3 import Gpt3
 import argparse
@@ -49,8 +51,8 @@ if __name__ == "__main__":
     df = pd.read_excel(file_corpus_train)
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:maximo, ["id", "source", "sentence", "token", "complexity", "escala"]]
-
-    gpt = Gpt3(datos, prompt, "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", load=args.load)
+    key = "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"
+    gpt = Gpt3(datos, prompt, key, load=args.load)
 
     # calcular_total_pagar(prompt, datos)
     gpt.process_all(file_path=file_corpus_train, save_result=True, percent=args.percent)
