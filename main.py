@@ -51,10 +51,10 @@ if __name__ == "__main__":
     df = pd.read_excel(file_corpus_train)
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:maximo, ["id", "source", "sentence", "token", "complexity", "escala"]]
-    key = "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"
+    key = "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"
     gpt = Gpt3(datos, prompt, key, load=args.load)
 
-    # calcular_total_pagar(prompt, datos)
+    # calcular_total_pagar(prompt, datos, cost=0.03)
     gpt.process_all(file_path=file_corpus_train, save_result=True, percent=args.percent)
 
 

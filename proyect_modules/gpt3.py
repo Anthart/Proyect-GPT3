@@ -14,7 +14,6 @@ from proyect_modules.total_pagar import *
 
 
 class Gpt3:
-
     STRAT_1 = 'strat1'
     STRAT_2 = 'strat2'
     STRAT_3 = 'strat3'
@@ -211,6 +210,14 @@ class Gpt3:
 
         return to_process, minimo, maximo
 
+    def search_response_GPT3(self, respuesta_gpt3, probs):
+        dicc = []
+        for index, val in enumerate(probs):
+            key = list(val.keys())
+            if key[0] == respuesta_gpt3:
+                dicc.append(probs[index])
+        return dicc
+
     def process_data(self, indice, resultado):
         temp = self.__prompt_format(
             self.__datos["source"][indice],
@@ -232,7 +239,15 @@ class Gpt3:
         try:
             respuesta_gpt3 = self.__filtro(respuesta_gpt3)
             cant_palabras = len(respuesta_gpt3.split())
-            prob = logprobs_to_percent(prob_tokens[0: cant_palabras])
+            if respuesta_gpt3 == "difficult":
+                prob = logprobs_to_percent(prob_tokens)
+                prob = parche_diff(prob)
+            elif respuesta_gpt3 in ["very easy", "very difficult"]:
+                prob = logprobs_to_percent(prob_tokens[0:cant_palabras])
+            else:
+                prob = logprobs_to_percent(prob_tokens)
+                prob = self.search_response_GPT3(respuesta_gpt3, prob)
+
             if respuesta_gpt3 == "":
                 raise KeyError
         except KeyError:
@@ -268,10 +283,17 @@ class Gpt3:
             peticiones += 1
 
             # complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
-            # complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
-            complejidad_gpt3 = self.__strat_1(respuesta_gpt3)
+
+            try:
+                complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
+            except Exception as ex:
+                temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+                sys.exit(str(ex))
+
+            # complejidad_gpt3 = self.__strat_1(respuesta_gpt3)
             respuesta_gpt3 = self.__asig_etiqueta(complejidad_gpt3)
-            rango = reduce(lambda x, y: f'{x + 0.01} - {y}', self.__rango_escalas.get(respuesta_gpt3))
+            # rango = reduce(lambda x, y: f'{x + 0.01} - {y}', self.__rango_escalas.get(respuesta_gpt3))
+            rango = str(self.__rango_escalas.get(respuesta_gpt3))
             complejidad = self.__datos["complexity"][indice]
             escala_complex = self.__datos["escala"][indice]
 
@@ -345,4 +367,4 @@ class Gpt3:
             if version:
                 resultado.to_excel(f'resultados/resultado_{version}.xlsx')
             else:
-                resultado.to_excel(f'resultados/resultado_strat_version12.xlsx')
+                resultado.to_excel(f'resultados/resultado_strat3_version12.xlsx')
