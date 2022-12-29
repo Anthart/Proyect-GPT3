@@ -145,6 +145,7 @@ class Gpt3:
             complejidad_gpt3 = rango[1] - (v_entre_rango * prod_dicc.get(respuesta_gpt3))
 
         if respuesta_gpt3 in ['difficult', 'very difficult']:
+            print(v_entre_rango)
             complejidad_gpt3 = rango[0] + (v_entre_rango * prod_dicc.get(respuesta_gpt3))
 
         if respuesta_gpt3 == 'neutral':
@@ -241,7 +242,9 @@ class Gpt3:
             cant_palabras = len(respuesta_gpt3.split())
             if respuesta_gpt3 == "difficult":
                 prob = logprobs_to_percent(prob_tokens)
-                prob = parche_diff(prob)
+                first_prob = list(prob[0].keys())
+                if first_prob[0] == "diff":
+                    prob = parche_diff(prob)
             elif respuesta_gpt3 in ["very easy", "very difficult"]:
                 prob = logprobs_to_percent(prob_tokens[0:cant_palabras])
             else:
@@ -284,15 +287,18 @@ class Gpt3:
 
             # complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
 
-            try:
-                complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
-            except Exception as ex:
-                temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
-                sys.exit(str(ex))
+            # try:
+            #     complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
+            # except Exception as ex:
+            #     temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+            #     sys.exit(str(ex))
+
+            print(prob[0])
+            complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
 
             # complejidad_gpt3 = self.__strat_1(respuesta_gpt3)
+            # complejidad_gpt3 = self.__means.get(respuesta_gpt3)
             respuesta_gpt3 = self.__asig_etiqueta(complejidad_gpt3)
-            # rango = reduce(lambda x, y: f'{x + 0.01} - {y}', self.__rango_escalas.get(respuesta_gpt3))
             rango = str(self.__rango_escalas.get(respuesta_gpt3))
             complejidad = self.__datos["complexity"][indice]
             escala_complex = self.__datos["escala"][indice]
@@ -327,7 +333,7 @@ class Gpt3:
                 peticiones = 0
                 last = time.time()
 
-            if tokens_prompt >= 100000 or peticiones >= 45:
+            if tokens_prompt >= 200000 or peticiones >= 45:
                 # if peticiones >= 55:
                 seconds_to_wait = 60 - actual
                 tokens_prompt = 0
@@ -367,4 +373,4 @@ class Gpt3:
             if version:
                 resultado.to_excel(f'resultados/resultado_{version}.xlsx')
             else:
-                resultado.to_excel(f'resultados/resultado_strat3_version12.xlsx')
+                resultado.to_excel(f'resultados/resultado_strat3_version4_Test.xlsx')
