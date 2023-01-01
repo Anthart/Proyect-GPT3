@@ -46,6 +46,7 @@ def prob_for_label(label, logprobs):
     prob = 0.0
     # Look at the first entry in logprobs. This represents the
     # probabilities for the very next token.
+    first_s = False  # bandera para no mandar a buscar el resto de palabra de las siguientes probs
     next_logprobs = logprobs[0]
     for s, logprob in next_logprobs.items():
         # We want labels to be considered case-insensitive. In
@@ -59,8 +60,9 @@ def prob_for_label(label, logprobs):
             # If the prediction matches one of the labels, add
             # the probability to the total probability for that
             # label.
+            first_s = True
             prob += logprob
-        elif label.lower().startswith(s):
+        elif label.lower().startswith(s) and not first_s:
             # If the prediction is a prefix of one of the labels, we
             # need to recur. Multiply the probability of the prefix
             # by the probability of the remaining part of the label.
@@ -94,7 +96,6 @@ def parche_very(probs, respuesta_gpt3):
         key = list(val.keys())
         if key[0] == "very":
             pre_new_probs = probs[index:]
-    print(pre_new_probs)
     new_probs = [{respuesta_gpt3: prob_for_label(respuesta_gpt3, pre_new_probs), **pre_new_probs[0]}]
     return new_probs
 

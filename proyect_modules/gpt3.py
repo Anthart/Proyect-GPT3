@@ -1,3 +1,5 @@
+import traceback
+
 import openai
 import sys
 import json
@@ -215,7 +217,7 @@ class Gpt3:
         dicc = []
         for index, val in enumerate(probs):
             key = list(val.keys())
-            if key[0] == respuesta_gpt3:
+            if key[0] in respuesta_gpt3:
                 dicc.append(probs[index])
         return dicc
 
@@ -239,17 +241,20 @@ class Gpt3:
 
         try:
             respuesta_gpt3 = self.__filtro(respuesta_gpt3)
-            cant_palabras = len(respuesta_gpt3.split())
+            prob = logprobs_to_percent(prob_tokens)
+            prob = self.search_response_GPT3(respuesta_gpt3, prob)
             if respuesta_gpt3 == "difficult":
-                prob = logprobs_to_percent(prob_tokens)
+                # print(prob)
                 first_prob = list(prob[0].keys())
                 if first_prob[0] == "diff":
                     prob = parche_diff(prob)
-            elif respuesta_gpt3 in ["very easy", "very difficult"]:
-                prob = logprobs_to_percent(prob_tokens[0:cant_palabras])
-            else:
-                prob = logprobs_to_percent(prob_tokens)
-                prob = self.search_response_GPT3(respuesta_gpt3, prob)
+            # elif respuesta_gpt3 == "very easy":
+            #     prob = logprobs_to_percent(prob_tokens)
+            #     print(prob)
+            #     prob = self.search_response_GPT3(respuesta_gpt3, prob)
+            #     # prob = parche_very(prob, respuesta_gpt3)
+            elif respuesta_gpt3 == "very difficult":
+                prob = parche_very(prob, respuesta_gpt3)
 
             if respuesta_gpt3 == "":
                 raise KeyError
@@ -257,6 +262,10 @@ class Gpt3:
             temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
             sys.exit("No se encontro el resultado esperado"
                      " por GPT3")
+        except IndexError:
+            temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+            traceback.print_exception(*sys.exc_info())
+            sys.exit()
         return temp, respuesta_gpt3, prob
 
     def process_all(self, file_path="", version=False, save_result=False, percent=False):
@@ -287,14 +296,14 @@ class Gpt3:
 
             # complejidad_gpt3 = round(self.__means[respuesta_gpt3], 15)
 
-            # try:
-            #     complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
-            # except Exception as ex:
-            #     temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
-            #     sys.exit(str(ex))
+            try:
+                complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
+            except Exception as ex:
+                temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
+                sys.exit(str(ex))
 
-            print(prob[0])
-            complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
+            # print(prob[0])
+            # complejidad_gpt3 = self.__strat_3_2(respuesta_gpt3, prob[0])
 
             # complejidad_gpt3 = self.__strat_1(respuesta_gpt3)
             # complejidad_gpt3 = self.__means.get(respuesta_gpt3)
@@ -373,4 +382,4 @@ class Gpt3:
             if version:
                 resultado.to_excel(f'resultados/resultado_{version}.xlsx')
             else:
-                resultado.to_excel(f'resultados/resultado_strat3_version4_Test.xlsx')
+                resultado.to_excel(f'resultados/resultado_strat3_version9_Test.xlsx')
