@@ -88,6 +88,17 @@ def parche_diff(probs):
     return new_probs
 
 
+def parche_very(probs, respuesta_gpt3):
+    pre_new_probs = []
+    for index, val in enumerate(probs):
+        key = list(val.keys())
+        if key[0] == "very":
+            pre_new_probs = probs[index:]
+    print(pre_new_probs)
+    new_probs = [{respuesta_gpt3: prob_for_label(respuesta_gpt3, pre_new_probs), **pre_new_probs[0]}]
+    return new_probs
+
+
 def logprobs_display(logprobs):
     # probs = logprobs_to_percent(logprobs)
     lista = ["", "", "", "", ""]
