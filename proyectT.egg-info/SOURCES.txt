@@ -1,0 +1,12 @@
+setup.py
+proyectT.egg-info/PKG-INFO
+proyectT.egg-info/SOURCES.txt
+proyectT.egg-info/dependency_links.txt
+proyectT.egg-info/not-zip-safe
+proyectT.egg-info/requires.txt
+proyectT.egg-info/top_level.txt
+proyect_modules/__init__.py
+proyect_modules/file_operation.py
+proyect_modules/gpt3.py
+proyect_modules/probs_response.py
+proyect_modules/total_pagar.py

@@ -1,0 +1,4 @@
+transformers
+openai
+pandas
+scikit-learn

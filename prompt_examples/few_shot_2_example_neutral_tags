@@ -1,0 +1,7 @@
+prompt = ("Order: Classify the words extracted from the following fragment in:"
+              " \"very easy\", \"easy\", \"neutral\", \"difficult\" and \"very difficult\".\n"
+              "Source: biomed\nFragment:The model of intermediate MSUD was created by partial transgenic rescue of the "
+              "E2 gene knockout.\nWord: rescue\nComplexity: neutral\n###\n"
+              "Source: bible\nFragment: Let your laughter be turned to mourning, and your joy to gloom.\n"
+              "Word: mourning\nComplexity: neutral\n###\n"
+              "Source: @recurso\nFragment: @oracion\nWord: @aEvaluar\nComplexity:")
