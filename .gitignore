@@ -3,3 +3,7 @@ aux.py
 data
 versions_prompt
 temp
+__pycache__
+*.pyc
+.env
+venv

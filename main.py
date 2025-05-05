@@ -3,8 +3,11 @@ import os
 import pandas as pd
 from proyect_modules.gpt3 import Gpt3
 import argparse
+from dotenv import load_dotenv
 
 from proyect_modules.total_pagar import calcular_total_pagar
+
+load_dotenv()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -55,9 +58,9 @@ if __name__ == "__main__":
     df = pd.read_excel(file_corpus_test)
     df.loc[df["token"].isnull(), "token"] = "null"
     datos = df.loc[minimo:, ["id", "source", "sentence", "token", "complexity", "escala"]]
-    key = "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"
+    key = os.getenv("OPEN_KEY")
     gpt = Gpt3(datos, prompt, key, load=args.load)
-    # calcular_total_pagar(prompt, datos, cost=0.03)
+    calcular_total_pagar(prompt, datos, cost=0.03) # todo: need update cost 
     gpt.process_all(file_path=file_corpus_train, save_result=True, percent=args.percent)
 
 

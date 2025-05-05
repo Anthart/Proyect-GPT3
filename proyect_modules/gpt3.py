@@ -1,7 +1,6 @@
-import traceback
-
-import openai
+from openai import OpenAI
 import sys
+
 import json
 import time
 
@@ -13,7 +12,6 @@ from functools import reduce
 from proyect_modules.probs_response import *
 from proyect_modules.file_operation import *
 from proyect_modules.total_pagar import *
-
 
 class Gpt3:
     STRAT_1 = 'strat1'
@@ -175,19 +173,31 @@ class Gpt3:
         return resultado
 
     def __evaluar(self, orden):
-        openai.api_key = self.__key
-        response = openai.Completion.create(
-            model="text-davinci-003",
-            prompt=orden,
+
+        client = OpenAI(
+            api_key=self.__key,
+        )
+
+        userRol = {
+            "role": "user", 
+            "content": [{
+                "type": "text",
+                "text": orden
+            }]
+        }
+
+        response =  client.chat.completions.create(
+            model="gpt-4o",
+            messages=[userRol],
             temperature=0,
-            max_tokens=5,
+            max_output_tokens=5,
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
             logprobs=5,
             stop=["\n"]
         )
-        respuesta = response.choices[0].text
+        respuesta = response.choices[0].message.content
         prob_tokens = response.choices[0].logprobs.top_logprobs
         return respuesta, prob_tokens
 
@@ -264,7 +274,6 @@ class Gpt3:
                      " por GPT3")
         except IndexError:
             temporal_storage(indice, self.__datos.tail(1).index[0], resultado.loc[0:indice - 1])
-            traceback.print_exception(*sys.exc_info())
             sys.exit()
         return temp, respuesta_gpt3, prob
 
